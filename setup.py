@@ -5,21 +5,63 @@ Setup script for Bible Gateway Downloader - True Async Edition
 
 from setuptools import setup, find_packages
 import os
+import re
 
 # Read the README file for long description
 def read_readme():
     with open("README.md", "r", encoding="utf-8") as fh:
         return fh.read()
 
-# Read requirements from requirements.txt
-def read_requirements():
+# Read requirements from Pipfile
+def read_pipfile_requirements():
     requirements = []
-    if os.path.exists("requirements.txt"):
-        with open("requirements.txt", "r", encoding="utf-8") as fh:
-            for line in fh:
+    if os.path.exists("Pipfile"):
+        with open("Pipfile", "r", encoding="utf-8") as fh:
+            content = fh.read()
+            
+        # Extract packages from [packages] section
+        packages_match = re.search(r'\[packages\](.*?)(?=\[|$)', content, re.DOTALL)
+        if packages_match:
+            packages_section = packages_match.group(1)
+            for line in packages_section.split('\n'):
                 line = line.strip()
-                if line and not line.startswith("#"):
-                    requirements.append(line)
+                if line and '=' in line and not line.startswith('#'):
+                    # Parse package name and version
+                    package_match = re.match(r'(\w+)\s*=\s*["\']?([^"\']*)["\']?', line)
+                    if package_match:
+                        package_name = package_match.group(1)
+                        version_spec = package_match.group(2).strip()
+                        if version_spec and version_spec != '*':
+                            requirements.append(f"{package_name}{version_spec}")
+                        else:
+                            requirements.append(package_name)
+    
+    return requirements
+
+# Read dev requirements from Pipfile
+def read_pipfile_dev_requirements():
+    requirements = []
+    if os.path.exists("Pipfile"):
+        with open("Pipfile", "r", encoding="utf-8") as fh:
+            content = fh.read()
+            
+        # Extract packages from [dev-packages] section
+        dev_packages_match = re.search(r'\[dev-packages\](.*?)(?=\[|$)', content, re.DOTALL)
+        if dev_packages_match:
+            dev_packages_section = dev_packages_match.group(1)
+            for line in dev_packages_section.split('\n'):
+                line = line.strip()
+                if line and '=' in line and not line.startswith('#'):
+                    # Parse package name and version
+                    package_match = re.match(r'(\w+)\s*=\s*["\']?([^"\']*)["\']?', line)
+                    if package_match:
+                        package_name = package_match.group(1)
+                        version_spec = package_match.group(2).strip()
+                        if version_spec and version_spec != '*':
+                            requirements.append(f"{package_name}{version_spec}")
+                        else:
+                            requirements.append(package_name)
+    
     return requirements
 
 setup(
@@ -51,22 +93,9 @@ setup(
         "Topic :: Utilities",
     ],
     python_requires=">=3.8",
-    install_requires=[
-        "aiohttp>=3.8.0",
-        "beautifulsoup4>=4.11.0",
-        "colorlog>=6.7.0",
-        "pyyaml>=6.0",
-        "lxml>=4.9.0",
-    ],
+    install_requires=read_pipfile_requirements(),
     extras_require={
-        "dev": [
-            "black>=22.0.0",
-            "isort>=5.10.0",
-            "flake8>=5.0.0",
-            "mypy>=1.0.0",
-            "pytest>=7.0.0",
-            "pytest-asyncio>=0.21.0",
-        ],
+        "dev": read_pipfile_dev_requirements(),
     },
     entry_points={
         "console_scripts": [

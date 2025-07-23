@@ -4,22 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bygod"
-dynamic = ["version"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
 description = "A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
-    {name = "Bible Gateway Downloader Team", email = "your-email@example.com"}
+    {name = "Bible Gateway Downloader Team", email = "ByGoD@rapdirabbit.software"}
 ]
 maintainers = [
-    {name = "Bible Gateway Downloader Team", email = "your-email@example.com"}
+    {name = "Bible Gateway Downloader Team", email = "ByGoD@rapdirabbit.software"}
 ]
 keywords = ["bible", "download", "biblegateway", "async", "scripture", "religion", "json", "csv", "xml", "yaml"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Religion",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -33,32 +32,15 @@ classifiers = [
     "Topic :: Utilities",
 ]
 requires-python = ">=3.8"
-dependencies = [
-    "aiohttp>=3.8.0",
-    "beautifulsoup4>=4.11.0",
-    "colorlog>=6.7.0",
-    "pyyaml>=6.0",
-    "lxml>=4.9.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "black>=22.0.0",
-    "isort>=5.10.0",
-    "flake8>=5.0.0",
-    "mypy>=1.0.0",
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-]
 
 [project.scripts]
 bygod = "bible_downloader:main"
 
 [project.urls]
-Homepage = "https://github.com/your-username/bible-gateway-downloads"
-Documentation = "https://github.com/your-username/bible-gateway-downloads#readme"
-Repository = "https://github.com/your-username/bible-gateway-downloads"
-"Bug Tracker" = "https://github.com/your-username/bible-gateway-downloads/issues"
+Homepage = "https://github.com/Christ-Is-The-King/bible-gateway-downloader"
+Documentation = "https://github.com/Christ-Is-The-King/bible-gateway-downloader#readme"
+Repository = "https://github.com/Christ-Is-The-King/bible-gateway-downloader"
+"Bug Tracker" = "https://github.com/Christ-Is-The-King/bible-gateway-downloader/issues"
 
 [tool.setuptools_scm]
 write_to = "bible_downloader/_version.py"

@@ -85,7 +85,7 @@ ipython_config.py
 .python-version
 
 # pipenv
-Pipfile.lock
+# Pipfile.lock  # Keep this for reproducible builds
 
 # poetry
 poetry.lock

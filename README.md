@@ -22,11 +22,35 @@ A comprehensive, truly asynchronous tool for downloading Bible translations from
 pip install bygod
 ```
 
-### Option 2: Install from Source
+### Option 2: Install from Source (Using Pipenv)
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:Christ-Is-The-King/bible-gateway-downloader.git
+   cd bible-gateway-downloads
+   ```
+
+2. **Install pipenv** (if not already installed):
+   ```bash
+   pip install pipenv
+   ```
+
+3. **Install dependencies and activate virtual environment**:
+   ```bash
+   pipenv install
+   pipenv shell
+   ```
+
+4. **Install in development mode**:
+   ```bash
+   pip install -e .
+   ```
+
+### Option 3: Install from Source (Using pip)
+
+1. **Clone the repository**:
+   ```bash
+   git clone git@github.com:Christ-Is-The-King/bible-gateway-downloader.git
    cd bible-gateway-downloads
    ```
 
@@ -36,12 +60,17 @@ pip install bygod
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Install in development mode**:
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Install in development mode**:
    ```bash
    pip install -e .
    ```
 
-### Option 3: Build and Install Package
+### Option 4: Build and Install Package
 
 1. **Build the package**:
    ```bash
@@ -198,6 +227,10 @@ The downloader directly parses BibleGateway HTML using:
 Run the test suite to verify functionality:
 
 ```bash
+# Using pipenv
+pipenv run python tests.py
+
+# Or using pip
 python tests.py
 ```
 
@@ -220,10 +253,18 @@ The true async architecture provides significant performance improvements:
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
+3. Install dependencies using pipenv:
+   ```bash
+   pipenv install
+   pipenv install --dev
+   ```
+4. Make your changes
+5. Add tests for new functionality
+6. Ensure all tests pass:
+   ```bash
+   pipenv run python tests.py
+   ```
+7. Submit a pull request
 
 ## 📄 License
 
