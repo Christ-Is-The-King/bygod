@@ -225,7 +225,7 @@ pipenv run safety check
 ## 📋 File Structure
 
 ```
-bible-gateway-downloads/
+bible-gateway-downloader/
 ├── Pipfile                 # Dependency definitions
 ├── Pipfile.lock           # Locked dependency versions
 ├── setup.py               # Package configuration (reads Pipfile)

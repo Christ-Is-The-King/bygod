@@ -27,7 +27,7 @@ pip install bygod
 1. **Clone the repository**:
    ```bash
    git clone git@github.com:Christ-Is-The-King/bible-gateway-downloader.git
-   cd bible-gateway-downloads
+   cd bible-gateway-downloader
    ```
 
 2. **Install pipenv** (if not already installed):
@@ -51,7 +51,7 @@ pip install bygod
 1. **Clone the repository**:
    ```bash
    git clone git@github.com:Christ-Is-The-King/bible-gateway-downloader.git
-   cd bible-gateway-downloads
+   cd bible-gateway-downloader
    ```
 
 2. **Create a virtual environment**:

@@ -1,1 +1,1 @@
-# Utils package for bible-gateway-downloads
+# Utils package for bible-gateway-downloader

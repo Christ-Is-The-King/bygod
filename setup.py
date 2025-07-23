@@ -68,11 +68,11 @@ setup(
     name="bygod",
     version="2.0.0",
     author="Bible Gateway Downloader Team",
-    author_email="your-email@example.com",
+    author_email="ByGoD@rapdirabbit.software",
     description="A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/your-username/bible-gateway-downloads",
+    url="https://github.com/Christ-Is-The-King/bible-gateway-downloader",
     py_modules=["bible_downloader"],
     packages=find_packages(),
     classifiers=[
@@ -117,8 +117,8 @@ setup(
         "yaml",
     ],
     project_urls={
-        "Bug Reports": "https://github.com/your-username/bible-gateway-downloads/issues",
-        "Source": "https://github.com/your-username/bible-gateway-downloads",
-        "Documentation": "https://github.com/your-username/bible-gateway-downloads#readme",
+        "Bug Reports": "https://github.com/Christ-Is-The-King/bible-gateway-downloader/issues",
+        "Source": "https://github.com/Christ-Is-The-King/bible-gateway-downloader",
+        "Documentation": "https://github.com/Christ-Is-The-King/bible-gateway-downloader#readme",
     },
 )
