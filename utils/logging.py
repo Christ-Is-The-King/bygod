@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+
 import logging
 import os
+from datetime import datetime
 
-#!/usr/bin/env python3
+import colorlog
 
 
 class ColoredFormatterWithTimezone(colorlog.ColoredFormatter):

@@ -2,7 +2,6 @@
 
 import argparse
 import asyncio
-import csv
 import json
 import logging
 import multiprocessing
@@ -10,24 +9,14 @@ import os
 import shutil
 import tempfile
 import textwrap
-import time
-import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional, Set
-from xml.dom import minidom
+from typing import Dict, List
 
-import aiofiles
-import aiohttp
-import colorlog
-import yaml
 from meaningless import JSONDownloader
 from meaningless.utilities.common import BIBLE_TRANSLATIONS
 
 from utils.formatting import (
     format_as_csv,
-    format_as_json,
     format_as_xml,
     format_as_yaml,
 )
@@ -224,9 +213,6 @@ async def download_book(
     """
     try:
         logger.info(f"  Downloading {book}")
-        import pdb
-
-        pdb.set_trace()
         # Use the JSONDownloader to download the book to a file
         result = await asyncio.get_event_loop().run_in_executor(
             None, downloader.download_book, book
@@ -264,9 +250,13 @@ async def download_book(
                         verse_text = verse_text[i:].strip()
                     verses.append(verse_text)
 
-                converted_data.append({"book": book, "chapter": chapter_num, "verses": verses})
+                converted_data.append(
+                    {"book": book, "chapter": chapter_num, "verses": verses}
+                )
 
-        logger.info(f"    Successfully downloaded {book}: {len(converted_data)} chapters")
+        logger.info(
+            f"    Successfully downloaded {book}: {len(converted_data)} chapters"
+        )
         return converted_data
 
     except Exception as e:
@@ -274,7 +264,9 @@ async def download_book(
         return []
 
 
-async def download_full_bible(downloader: JSONDownloader, logger: logging.Logger) -> List[Dict]:
+async def download_full_bible(
+    downloader: JSONDownloader, logger: logging.Logger
+) -> List[Dict]:
     """
     Download the entire Bible from BibleGateway using JSONDownloader.
 
@@ -287,11 +279,10 @@ async def download_full_bible(downloader: JSONDownloader, logger: logging.Logger
     """
     try:
         logger.info("Downloading full Bible")
-        import pdb
-
-        pdb.set_trace()
         # Use the JSONDownloader to get the full Bible data
-        bible_data = await asyncio.get_event_loop().run_in_executor(None, downloader.download_book)
+        bible_data = await asyncio.get_event_loop().run_in_executor(
+            None, downloader.download_book
+        )
 
         if not bible_data:
             logger.error(" No data received for full Bible")
@@ -327,7 +318,9 @@ async def process_translation(
     logger.debug(f"Processing translation: {full_translation}")
 
     # Create JSONDownloader instance
-    downloader = JSONDownloader(translation=local_translation)
+    downloader = JSONDownloader(
+        translation=local_translation, strip_excess_whitespace=True
+    )
 
     # Set the downloader to use the temp directory
     downloader.default_directory = output_dir
@@ -357,28 +350,36 @@ async def process_translation(
         logger.info(f"  Total chapters in full Bible: {len(full_bible_data)}")
 
         if full_bible_data:
-            logger.info(f"  Writing full Bible files...")
+            logger.info("  Writing full Bible files...")
             # Save full Bible in each requested format
             for fmt in formats:
                 if fmt == "json":
-                    output_file = os.path.join(translation_dir, f"{full_translation}.json")
+                    output_file = os.path.join(
+                        translation_dir, f"{full_translation}.json"
+                    )
                     logger.info(f"    Writing JSON to {output_file}")
                     with open(output_file, "w", encoding="utf-8") as f:
                         json.dump(full_bible_data, f, indent=2, ensure_ascii=False)
                 elif fmt == "csv":
-                    output_file = os.path.join(translation_dir, f"{full_translation}.csv")
+                    output_file = os.path.join(
+                        translation_dir, f"{full_translation}.csv"
+                    )
                     logger.info(f"    Writing CSV to {output_file}")
                     csv_data = format_as_csv(full_bible_data)
                     with open(output_file, "w", encoding="utf-8") as f:
                         f.write(csv_data)
                 elif fmt == "yml":
-                    output_file = os.path.join(translation_dir, f"{full_translation}.yml")
+                    output_file = os.path.join(
+                        translation_dir, f"{full_translation}.yml"
+                    )
                     logger.info(f"    Writing YAML to {output_file}")
                     yaml_data = format_as_yaml(full_bible_data)
                     with open(output_file, "w", encoding="utf-8") as f:
                         f.write(yaml_data)
                 elif fmt == "xml":
-                    output_file = os.path.join(translation_dir, f"{full_translation}.xml")
+                    output_file = os.path.join(
+                        translation_dir, f"{full_translation}.xml"
+                    )
                     logger.info(f"    Writing XML to {output_file}")
                     xml_data = format_as_xml(full_bible_data)
                     with open(output_file, "w", encoding="utf-8") as f:
@@ -400,7 +401,9 @@ async def process_translation(
         results = await asyncio.gather(*tasks)
 
         # Debug: Check what we got back for individual books
-        logger.info(f"  Downloaded {len(results)} individual books, checking results...")
+        logger.info(
+            f"  Downloaded {len(results)} individual books, checking results..."
+        )
         for i, (book, result) in enumerate(zip(BOOKS, results)):
             logger.info(f"    {book}: {len(result) if result else 0} chapters")
 
@@ -560,10 +563,9 @@ async def retry_failed_downloads(
 
             try:
                 # Create JSONDownloader instance
-                downloader = JSONDownloader(translation=translation)
-                import pdb
-
-                pdb.set_trace()
+                downloader = JSONDownloader(
+                    translation=translation, strip_excess_whitespace=True
+                )
                 # Try to download the book again
                 book_data = await asyncio.get_event_loop().run_in_executor(
                     None, downloader.download_book, book
@@ -596,7 +598,9 @@ async def retry_failed_downloads(
                             with open(output_file, "w", encoding="utf-8") as f:
                                 f.write(xml_data)
 
-                    logger.info(f"Successfully retried download of {book} for {translation}")
+                    logger.info(
+                        f"Successfully retried download of {book} for {translation}"
+                    )
                 else:
                     # Add back to failed downloads list for next retry
                     failed_downloads_list.append(failed_download)
@@ -617,7 +621,9 @@ async def retry_failed_downloads(
             f"Failed to download {len(failed_downloads_list)} items after {max_failed_retries} retries"
         )
         for failed_download in failed_downloads_list:
-            logger.error(f"  - {failed_download['book']} for {failed_download['translation']}")
+            logger.error(
+                f"  - {failed_download['book']} for {failed_download['translation']}"
+            )
 
 
 async def main_async():
@@ -648,7 +654,9 @@ async def main_async():
         ]
 
         logger.info(f"Starting download of {len(args.translations)} translations")
-        logger.info(f"Using {args.processes} processes with {args.threads} threads each")
+        logger.info(
+            f"Using {args.processes} processes with {args.threads} threads each"
+        )
         logger.info(f"Output formats: {', '.join(args.formats)}")
         logger.info(f"Output mode: {args.output_mode}")
 

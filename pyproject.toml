@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "bygod"
-dynamic = ["version", "dependencies", "optional-dependencies"]
+version = "2.1.0"
 description = "A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Bible Gateway Downloader Team", email = "ByGoD@rapdirabbit.software"}
 ]
@@ -32,6 +32,32 @@ classifiers = [
     "Topic :: Utilities",
 ]
 requires-python = ">=3.8"
+dependencies = [
+    "aiohttp>=3.8.0",
+    "beautifulsoup4>=4.11.0",
+    "colorlog>=6.7.0",
+    "pyyaml>=6.0",
+    "lxml>=4.9.0",
+    "meaningless>=1.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "flake8",
+    "isort",
+    "mypy",
+    "pylint",
+    "bandit",
+    "pydocstyle",
+    "vulture",
+    "radon",
+    "safety",
+    "pre-commit",
+    "twine",
+    "build",
+]
 
 [project.scripts]
 bygod = "bible_downloader:main"
@@ -42,8 +68,8 @@ Documentation = "https://github.com/Christ-Is-The-King/bible-gateway-downloader#
 Repository = "https://github.com/Christ-Is-The-King/bible-gateway-downloader"
 "Bug Tracker" = "https://github.com/Christ-Is-The-King/bible-gateway-downloader/issues"
 
-[tool.setuptools_scm]
-write_to = "bible_downloader/_version.py"
+[tool.setuptools]
+py-modules = ["bible_downloader"]
 
 [tool.black]
 line-length = 88

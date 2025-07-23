@@ -110,13 +110,17 @@ async def process_translation(translation: str) -> Dict[str, List[int]]:
                 logger.error(
                     f"Error processing chapter {chapter} in {book} ({translation}): {str(e)}"
                 )
-                books_chapters_passages_count_dict[book].append(0)  # Add 0 for failed chapters
+                books_chapters_passages_count_dict[book].append(
+                    0
+                )  # Add 0 for failed chapters
 
     logger.info(f"Completed processing for translation: {translation}")
     return books_chapters_passages_count_dict
 
 
-async def get_chapter_passage_counts_by_translations() -> Dict[str, Dict[str, List[int]]]:
+async def get_chapter_passage_counts_by_translations() -> (
+    Dict[str, Dict[str, List[int]]]
+):
     """
     Gets the total number of passages for each chapter in all books for all supported translations.
     Uses concurrent processing for better performance.
@@ -175,7 +179,9 @@ def get_all_translations_passage_counts() -> Dict[str, Dict[str, List[int]]]:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            results = loop.run_until_complete(get_chapter_passage_counts_by_translations())
+            results = loop.run_until_complete(
+                get_chapter_passage_counts_by_translations()
+            )
             logger.info("Successfully fetched passage counts for all translations")
             return results
         finally:

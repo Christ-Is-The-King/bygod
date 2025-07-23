@@ -47,7 +47,9 @@ def format_as_csv(data):
                 # Properly escape the verse text for CSV
                 verse_text = str(verse_text).replace('"', '""')  # Escape quotes
                 if "," in verse_text or '"' in verse_text or "\n" in verse_text:
-                    verse_text = f'"{verse_text}"'  # Quote if contains special characters
+                    verse_text = (
+                        f'"{verse_text}"'  # Quote if contains special characters
+                    )
                 output.append(f"{book},{chapter},{verse_num},{verse_text}")
 
     return "\n".join(output)

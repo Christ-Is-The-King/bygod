@@ -17,7 +17,7 @@ This module provides:
 
 Author: Bible Gateway Downloader Team
 License: MIT
-Version: 2.0.0 - True Async Edition
+Version: 2.1.0 - True Async Edition
 """
 
 import argparse
@@ -35,6 +35,8 @@ from urllib.parse import quote
 import aiohttp
 from aiohttp import ClientTimeout, TCPConnector
 from bs4 import BeautifulSoup
+from meaningless import JSONDownloader
+from meaningless.utilities.common import get_page, remove_superscript_numbers_in_passage
 
 # =============================================================================
 # CONFIGURATION CONSTANTS
@@ -177,7 +179,7 @@ def setup_logging(name: str = "bible_downloader") -> logging.Logger:
 
     # Create formatter
     formatter = colorlog.ColoredFormatter(
-        "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        "%(log_color)s%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%H:%M:%S",
         log_colors={
             "DEBUG": "cyan",
@@ -243,7 +245,96 @@ class AsyncBibleDownloader:
         self.session: Optional[aiohttp.ClientSession] = None
 
         # Set up logging
-        self.logger = logging.getLogger(f"AsyncBibleDownloader.{translation}")
+        self.logger = setup_logging(f"AsyncBibleDownloader.{translation}")
+
+        # Store original get_page function for restoration
+        self._original_get_page = get_page
+
+        # Monkey patch get_page to use our async session
+        self._setup_monkey_patch()
+
+    def _setup_monkey_patch(self):
+        """Set up monkey patching of meaningless library's get_page function."""
+        import meaningless.utilities.common
+
+        async def async_get_page(url: str) -> str:
+            """Async version of get_page that uses our aiohttp session."""
+            if not self.session:
+                await self._create_session()
+
+            async with self.semaphore:
+                for retry in range(self.max_retries + 1):
+                    try:
+                        async with self.session.get(url) as response:
+                            if response.status == 200:
+                                return await response.text()
+                            elif response.status == 429:  # Rate limited
+                                self.logger.warning(
+                                    f"⏸️ Rate limited (429) for {self.translation}, retrying..."
+                                )
+                                if retry < self.max_retries:
+                                    delay = self.retry_delay * (2**retry)
+                                    await asyncio.sleep(delay)
+                                    continue
+                                else:
+                                    self.logger.error(
+                                        f"❌ Rate limited after {self.max_retries + 1} retries for {self.translation}"
+                                    )
+                                    return ""
+                            else:
+                                self.logger.error(
+                                    f"❌ HTTP {response.status} for {self.translation}"
+                                )
+                                return ""
+
+                    except Exception as e:
+                        if retry < self.max_retries:
+                            delay = self.retry_delay * (2**retry)
+                            self.logger.warning(
+                                f"🔄 Request failed for {self.translation}, retrying in {delay}s: {str(e)}"
+                            )
+                            await asyncio.sleep(delay)
+                            continue
+                        else:
+                            self.logger.error(
+                                f"❌ Request failed for {self.translation} after {self.max_retries + 1} attempts: {str(e)}"
+                            )
+                            return ""
+
+            return ""
+
+        # Create a synchronous wrapper that runs the async function
+        def sync_get_page(url: str) -> str:
+            """Synchronous wrapper for async_get_page."""
+            try:
+                # Get the current event loop or create a new one
+                try:
+                    loop = asyncio.get_running_loop()
+                    # If we're already in an async context, we can't use run_until_complete
+                    # So we'll use the original get_page as fallback
+                    return self._original_get_page(url)
+                except RuntimeError:
+                    # No event loop running, we can create one
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        return loop.run_until_complete(async_get_page(url))
+                    finally:
+                        loop.close()
+            except Exception as e:
+                self.logger.error(f"Error in monkey-patched get_page: {e}")
+                # Fallback to original
+                return self._original_get_page(url)
+
+        # Apply the monkey patch
+        meaningless.utilities.common.get_page = sync_get_page
+        self._patched_get_page = sync_get_page
+
+    def _restore_original_get_page(self):
+        """Restore the original get_page function."""
+        import meaningless.utilities.common
+
+        meaningless.utilities.common.get_page = self._original_get_page
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -253,6 +344,7 @@ class AsyncBibleDownloader:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self._close_session()
+        self._restore_original_get_page()
 
     async def _create_session(self):
         """Create aiohttp session with proper configuration."""
@@ -350,93 +442,141 @@ class AsyncBibleDownloader:
         try:
             soup = BeautifulSoup(content, "html.parser")
 
-            # Look for chapter navigation links
-            chapter_links = soup.find_all("a", href=re.compile(r"chapter=\d+"))
+            # Look for chapter navigation links - try multiple patterns
+            chapter_links = []
+
+            # Pattern 1: Direct chapter links
+            chapter_links.extend(soup.find_all("a", href=re.compile(r"chapter=\d+")))
+
+            # Pattern 2: Chapter navigation dropdown
+            chapter_select = soup.find("select", {"name": "chapter"})
+            if chapter_select:
+                chapter_links.extend(chapter_select.find_all("option"))
+
+            # Pattern 3: Chapter navigation in breadcrumbs or navigation
+            nav_links = soup.find_all("a", href=re.compile(rf"{book.lower()}\+\d+"))
+            chapter_links.extend(nav_links)
 
             if chapter_links:
                 chapters = set()
                 for link in chapter_links:
-                    match = re.search(r"chapter=(\d+)", link.get("href", ""))
+                    # Extract chapter number from href
+                    href = link.get("href", "")
+                    match = re.search(r"chapter=(\d+)", href)
                     if match:
                         chapters.add(int(match.group(1)))
 
+                    # Extract from option value
+                    value = link.get("value", "")
+                    if value.isdigit():
+                        chapters.add(int(value))
+
+                    # Extract from text content
+                    text = link.get_text(strip=True)
+                    if text.isdigit():
+                        chapters.add(int(text))
+
                 if chapters:
-                    return max(chapters)
+                    max_chapter = max(chapters)
+                    self.logger.debug(f"Discovered {max_chapter} chapters for {book}")
+                    return max_chapter
 
             # Fallback: try to find chapter numbers in the text
             chapter_pattern = re.compile(r"Chapter\s+(\d+)", re.IGNORECASE)
             matches = chapter_pattern.findall(content)
             if matches:
-                return max(int(match) for match in matches)
+                max_chapter = max(int(match) for match in matches)
+                self.logger.debug(
+                    f"Found {max_chapter} chapters via text pattern for {book}"
+                )
+                return max_chapter
+
+            # Additional fallback: try common chapter counts for known books
+            known_chapters = {
+                "Genesis": 50,
+                "Exodus": 40,
+                "Leviticus": 27,
+                "Numbers": 36,
+                "Deuteronomy": 34,
+                "Joshua": 24,
+                "Judges": 21,
+                "Ruth": 4,
+                "1 Samuel": 31,
+                "2 Samuel": 24,
+                "1 Kings": 22,
+                "2 Kings": 25,
+                "1 Chronicles": 29,
+                "2 Chronicles": 36,
+                "Ezra": 10,
+                "Nehemiah": 13,
+                "Esther": 10,
+                "Job": 42,
+                "Psalms": 150,
+                "Proverbs": 31,
+                "Ecclesiastes": 12,
+                "Song of Songs": 8,
+                "Isaiah": 66,
+                "Jeremiah": 52,
+                "Lamentations": 5,
+                "Ezekiel": 48,
+                "Daniel": 12,
+                "Hosea": 14,
+                "Joel": 3,
+                "Amos": 9,
+                "Obadiah": 1,
+                "Jonah": 4,
+                "Micah": 7,
+                "Nahum": 3,
+                "Habakkuk": 3,
+                "Zephaniah": 3,
+                "Haggai": 2,
+                "Zechariah": 14,
+                "Malachi": 4,
+                "Matthew": 28,
+                "Mark": 16,
+                "Luke": 24,
+                "John": 21,
+                "Acts": 28,
+                "Romans": 16,
+                "1 Corinthians": 16,
+                "2 Corinthians": 13,
+                "Galatians": 6,
+                "Ephesians": 6,
+                "Philippians": 4,
+                "Colossians": 4,
+                "1 Thessalonians": 5,
+                "2 Thessalonians": 3,
+                "1 Timothy": 6,
+                "2 Timothy": 4,
+                "Titus": 3,
+                "Philemon": 1,
+                "Hebrews": 13,
+                "James": 5,
+                "1 Peter": 5,
+                "2 Peter": 3,
+                "1 John": 5,
+                "2 John": 1,
+                "3 John": 1,
+                "Jude": 1,
+                "Revelation": 22,
+            }
+
+            if book in known_chapters:
+                self.logger.debug(
+                    f"Using known chapter count for {book}: {known_chapters[book]}"
+                )
+                return known_chapters[book]
 
         except Exception as e:
             self.logger.warning(f"Error discovering chapters for {book}: {e}")
 
         return 1  # Default to single chapter
 
-    def _extract_verses_from_html(self, html_content: str) -> List[str]:
-        """
-        Extract verses from BibleGateway HTML content.
-
-        Args:
-            html_content: HTML content from BibleGateway
-
-        Returns:
-            List of verse texts
-        """
-        try:
-            soup = BeautifulSoup(html_content, "html.parser")
-
-            # Look for verse elements
-            verses = []
-
-            # Try different selectors for verse content
-            selectors = [
-                ".text-html p",  # Common verse container
-                ".passage-text p",  # Alternative verse container
-                ".text p",  # Another common pattern
-                'p[class*="verse"]',  # Verses with "verse" in class
-                ".passage p",  # Passage paragraphs
-            ]
-
-            for selector in selectors:
-                verse_elements = soup.select(selector)
-                if verse_elements:
-                    for element in verse_elements:
-                        text = element.get_text(strip=True)
-                        if text and len(text) > 10:  # Filter out short text
-                            verses.append(text)
-                    break
-
-            # If no verses found with selectors, try a more general approach
-            if not verses:
-                # Look for paragraphs with verse numbers
-                paragraphs = soup.find_all("p")
-                for p in paragraphs:
-                    text = p.get_text(strip=True)
-                    # Look for patterns like "1 In the beginning..." or "1. In the beginning..."
-                    if re.match(r"^\d+[\.\s]", text) and len(text) > 10:
-                        verses.append(text)
-
-            # Clean up verses
-            cleaned_verses = []
-            for verse in verses:
-                # Remove extra whitespace and normalize
-                cleaned = re.sub(r"\s+", " ", verse.strip())
-                if cleaned and len(cleaned) > 5:
-                    cleaned_verses.append(cleaned)
-
-            return cleaned_verses
-
-        except Exception as e:
-            self.logger.error(f"Error extracting verses from HTML: {e}")
-            return []
-
     async def download_chapter(
         self, book: str, chapter: int
     ) -> Optional[Dict[str, Any]]:
         """
-        Download a single chapter asynchronously.
+        Download a single chapter asynchronously using meaningless library's JSONDownloader.
 
         Args:
             book: Name of the book
@@ -445,27 +585,67 @@ class AsyncBibleDownloader:
         Returns:
             Dictionary with chapter data, or None if failed
         """
+        import shutil
+        import tempfile
+
+        temp_dir = None
         try:
             # Log the download attempt
-            self.logger.info(
-                f"📖 Downloading {book} {chapter} ({self.translation})"
+            self.logger.info(f"📖 Downloading {book} {chapter} ({self.translation})")
+
+            # Create a temporary directory for this download
+            temp_dir = tempfile.mkdtemp(
+                prefix=f"bible_download_{self.translation}_{book}_{chapter}_"
             )
 
-            # Construct URL for the chapter
-            passage = f"{book} {chapter}"
-            url = PASSAGE_URL_TEMPLATE.format(quote(passage), self.translation)
+            # Use JSONDownloader directly - it handles all parsing through meaningless library
+            downloader = JSONDownloader(
+                translation=self.translation, strip_excess_whitespace=True
+            )
 
-            # Make the request
-            content = await self._make_request(url)
+            # Set the downloader to use our temporary directory
+            downloader.default_directory = temp_dir
 
-            if not content:
+            # Get the chapter using meaningless library
+            # The JSONDownloader will use our monkey-patched get_page function
+            result = downloader.download_chapter(book, chapter)
+
+            if result != 1:  # JSONDownloader returns 1 on success
                 self.logger.warning(
                     f"❌ Failed to download {book} {chapter} ({self.translation})"
                 )
                 return None
 
-            # Extract verses
-            verses = self._extract_verses_from_html(content)
+            # Read the downloaded JSON file
+            json_file = os.path.join(temp_dir, f"{book}.json")
+            if not os.path.exists(json_file):
+                self.logger.warning(
+                    f"⚠️ JSON file not found for {book} {chapter} ({self.translation})"
+                )
+                return None
+
+            with open(json_file, "r", encoding="utf-8") as f:
+                book_data = json.load(f)
+
+            # Extract verses for the specific chapter from the JSONDownloader format
+            # Format: {"Genesis": {"50": {"1": "verse text", "2": "verse text", ...}}}
+            verses = []
+            if book in book_data:
+                book_chapters = book_data[book]
+                if str(chapter) in book_chapters:
+                    chapter_verses = book_chapters[str(chapter)]
+                    # Convert from dict format to list format
+                    for verse_num in sorted(chapter_verses.keys(), key=int):
+                        verse_text = chapter_verses[verse_num]
+                        # Remove superscript numbers and clean up the verse text
+                        cleaned_verse = remove_superscript_numbers_in_passage(
+                            verse_text
+                        )
+                        # Remove multiple whitespace characters and newlines from within the text
+                        cleaned_verse = re.sub(r"\s+", " ", cleaned_verse)
+                        cleaned_verse = cleaned_verse.strip()
+                        if cleaned_verse:
+                            verses.append(cleaned_verse)
 
             if not verses:
                 self.logger.warning(
@@ -484,6 +664,15 @@ class AsyncBibleDownloader:
                 f"❌ Error downloading {book} {chapter} ({self.translation}): {e}"
             )
             return None
+        finally:
+            # Clean up the temporary directory
+            if temp_dir and os.path.exists(temp_dir):
+                try:
+                    shutil.rmtree(temp_dir)
+                except Exception as e:
+                    self.logger.warning(
+                        f"Could not clean up temp directory {temp_dir}: {e}"
+                    )
 
     async def download_book(self, book: str) -> List[Dict[str, Any]]:
         """
@@ -810,15 +999,12 @@ def parse_args():
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
-    # Format the choices for better display
-    wrapped_choices = textwrap.fill(", ".join(BIBLE_TRANSLATIONS.keys()), width=80)
-
     # Bible translation selection
     parser.add_argument(
         "--translations",
         type=validate_bibles,
         default=["NIV"],
-        help="Select 1 or more translations to download from this list (using comma separated values):\n{wrapped_choices}",
+        help=f"Select 1 or more translations to download from this list (using comma separated values):\n{textwrap.fill(', '.join(BIBLE_TRANSLATIONS.keys()), width=80)}",
     )
 
     # Output format selection
@@ -1056,7 +1242,7 @@ async def main_async():
 
         # Add individual book download tasks if requested
         if args.output_mode in ["all", "books"]:
-            logger.info(f"\n📚 Creating individual book download tasks...")
+            logger.info("\n📚 Creating individual book download tasks...")
             for translation in args.translations:
                 logger.info(f"🔤 Processing translation: {translation}")
                 for book in books_to_download:
@@ -1076,7 +1262,7 @@ async def main_async():
                     )
 
         logger.info(f"⚡ Created {len(tasks)} concurrent download tasks")
-        logger.info(f"🚀 Starting concurrent execution...")
+        logger.info("🚀 Starting concurrent execution...")
 
         # Execute all tasks concurrently using asyncio.gather
         results = await asyncio.gather(*tasks, return_exceptions=True)
