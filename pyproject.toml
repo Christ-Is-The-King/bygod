@@ -7,7 +7,7 @@ name = "bygod"
 dynamic = ["version", "dependencies", "optional-dependencies"]
 description = "A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     {name = "Bible Gateway Downloader Team", email = "ByGoD@rapdirabbit.software"}
 ]

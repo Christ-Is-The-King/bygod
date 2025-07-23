@@ -66,7 +66,7 @@ def read_pipfile_dev_requirements():
 
 setup(
     name="bygod",
-    version="2.0.0",
+    version="2.0.1",
     author="Bible Gateway Downloader Team",
     author_email="ByGoD@rapdirabbit.software",
     description="A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com",

@@ -286,7 +286,7 @@ async def download_full_bible(downloader: JSONDownloader, logger: logging.Logger
     :rtype: List[Dict]
     """
     try:
-        logger.info("  Downloading full Bible")
+        logger.info("Downloading full Bible")
         import pdb
 
         pdb.set_trace()
@@ -294,10 +294,10 @@ async def download_full_bible(downloader: JSONDownloader, logger: logging.Logger
         bible_data = await asyncio.get_event_loop().run_in_executor(None, downloader.download_book)
 
         if not bible_data:
-            logger.error("    No data received for full Bible")
+            logger.error(" No data received for full Bible")
             return []
 
-        logger.info("    Successfully downloaded full Bible")
+        logger.info(" Successfully downloaded full Bible")
         return bible_data
 
     except Exception as e:
@@ -339,7 +339,7 @@ async def process_translation(
     # Download all books for full Bible if needed
     full_bible_data = []
     if output_mode in ["all", "book"]:
-        logger.info("  Downloading all books for full Bible output")
+        logger.info("Downloading all books for full Bible output")
         # Download all books concurrently
         tasks = [download_book(downloader, book, logger) for book in BOOKS]
         results = await asyncio.gather(*tasks)
@@ -383,9 +383,9 @@ async def process_translation(
                     xml_data = format_as_xml(full_bible_data)
                     with open(output_file, "w", encoding="utf-8") as f:
                         f.write(xml_data)
-                logger.info(f"    Saved full Bible as {fmt.upper()}")
+                logger.info(f"Saved full Bible as {fmt.upper()}")
         else:
-            logger.warning("  No data received for full Bible")
+            logger.warning("No data received for full Bible")
 
     # Download individual books if needed
     if output_mode in ["all", "books"]:

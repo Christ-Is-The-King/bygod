@@ -98,6 +98,9 @@ __pypackages__/
 
 # Celery stuff
 celerybeat-schedule
+
+# PyPI configuration (contains API tokens)
+.pypirc
 celerybeat.pid
 
 # SageMath parsed files

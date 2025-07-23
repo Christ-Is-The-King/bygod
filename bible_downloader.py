@@ -27,6 +27,7 @@ import logging
 import os
 import re
 import textwrap
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
@@ -296,7 +297,7 @@ class AsyncBibleDownloader:
                             return await response.text()
                         elif response.status == 429:  # Rate limited
                             self.logger.warning(
-                                f"    ⏸️ Rate limited (429) for {self.translation}, retrying..."
+                                f"⏸️ Rate limited (429) for {self.translation}, retrying..."
                             )
                             if retry < self.max_retries:
                                 delay = self.retry_delay * (2**retry)
@@ -304,12 +305,12 @@ class AsyncBibleDownloader:
                                 continue
                             else:
                                 self.logger.error(
-                                    f"    ❌ Rate limited after {self.max_retries + 1} retries for {self.translation}"
+                                    f"❌ Rate limited after {self.max_retries + 1} retries for {self.translation}"
                                 )
                                 return None
                         else:
                             self.logger.error(
-                                f"    ❌ HTTP {response.status} for {self.translation}"
+                                f"❌ HTTP {response.status} for {self.translation}"
                             )
                             return None
 
@@ -317,13 +318,13 @@ class AsyncBibleDownloader:
                     if retry < self.max_retries:
                         delay = self.retry_delay * (2**retry)
                         self.logger.warning(
-                            f"    🔄 Request failed for {self.translation}, retrying in {delay}s: {str(e)}"
+                            f"🔄 Request failed for {self.translation}, retrying in {delay}s: {str(e)}"
                         )
                         await asyncio.sleep(delay)
                         continue
                     else:
                         self.logger.error(
-                            f"    ❌ Request failed for {self.translation} after {self.max_retries + 1} attempts: {str(e)}"
+                            f"❌ Request failed for {self.translation} after {self.max_retries + 1} attempts: {str(e)}"
                         )
                         return None
 
@@ -447,7 +448,7 @@ class AsyncBibleDownloader:
         try:
             # Log the download attempt
             self.logger.info(
-                f"    📖 Downloading {book} {chapter} ({self.translation})"
+                f"📖 Downloading {book} {chapter} ({self.translation})"
             )
 
             # Construct URL for the chapter
@@ -459,7 +460,7 @@ class AsyncBibleDownloader:
 
             if not content:
                 self.logger.warning(
-                    f"    ❌ Failed to download {book} {chapter} ({self.translation})"
+                    f"❌ Failed to download {book} {chapter} ({self.translation})"
                 )
                 return None
 
@@ -468,19 +469,19 @@ class AsyncBibleDownloader:
 
             if not verses:
                 self.logger.warning(
-                    f"    ⚠️ No verses found for {book} {chapter} ({self.translation})"
+                    f"⚠️ No verses found for {book} {chapter} ({self.translation})"
                 )
                 return None
 
             self.logger.info(
-                f"    ✅ Downloaded {book} {chapter} ({self.translation}): {len(verses)} verses"
+                f"✅ Downloaded {book} {chapter} ({self.translation}): {len(verses)} verses"
             )
 
             return {"book": book, "chapter": str(chapter), "verses": verses}
 
         except Exception as e:
             self.logger.error(
-                f"    ❌ Error downloading {book} {chapter} ({self.translation}): {e}"
+                f"❌ Error downloading {book} {chapter} ({self.translation}): {e}"
             )
             return None
 
@@ -494,11 +495,11 @@ class AsyncBibleDownloader:
         Returns:
             List of chapter dictionaries
         """
-        self.logger.info(f"  📚 Starting download of {book} ({self.translation})")
+        self.logger.info(f" 📚 Starting download of {book} ({self.translation})")
 
         # Discover chapter count
         chapter_count = await self._discover_chapter_count(book)
-        self.logger.info(f"    📊 {book} has {chapter_count} chapters")
+        self.logger.info(f"📊 {book} has {chapter_count} chapters")
 
         # Create tasks for all chapters
         tasks = [
@@ -507,7 +508,7 @@ class AsyncBibleDownloader:
         ]
 
         self.logger.info(
-            f"    ⚡ Executing {len(tasks)} concurrent chapter downloads for {book}"
+            f"⚡ Executing {len(tasks)} concurrent chapter downloads for {book}"
         )
 
         # Execute all chapter downloads concurrently
@@ -522,29 +523,29 @@ class AsyncBibleDownloader:
             chapter_num = i + 1
             if isinstance(result, Exception):
                 self.logger.error(
-                    f"    ❌ Error downloading {book} {chapter_num} ({self.translation}): {result}"
+                    f"❌ Error downloading {book} {chapter_num} ({self.translation}): {result}"
                 )
                 failed_chapters += 1
             elif result:
                 chapters.append(result)
                 successful_chapters += 1
                 self.logger.debug(
-                    f"    ✅ Downloaded {book} {chapter_num} ({self.translation}): {len(result['verses'])} verses"
+                    f"✅ Downloaded {book} {chapter_num} ({self.translation}): {len(result['verses'])} verses"
                 )
             else:
                 self.logger.warning(
-                    f"    ❌ Failed to download {book} {chapter_num} ({self.translation})"
+                    f"❌ Failed to download {book} {chapter_num} ({self.translation})"
                 )
                 failed_chapters += 1
 
         total_verses = sum(len(chapter["verses"]) for chapter in chapters)
         self.logger.info(
-            f"    📊 Completed {book} ({self.translation}): {successful_chapters}/{chapter_count} chapters, {total_verses} total verses"
+            f"📊 Completed {book} ({self.translation}): {successful_chapters}/{chapter_count} chapters, {total_verses} total verses"
         )
 
         if failed_chapters > 0:
             self.logger.warning(
-                f"    ⚠️ {failed_chapters} chapters failed to download for {book} ({self.translation})"
+                f"⚠️ {failed_chapters} chapters failed to download for {book} ({self.translation})"
             )
 
         return chapters
@@ -594,12 +595,12 @@ class AsyncBibleDownloader:
 
         total_verses = sum(len(chapter["verses"]) for chapter in all_chapters)
         self.logger.info(f"📊 Full Bible download complete for {self.translation}")
-        self.logger.info(f"   📚 Books: {successful_books}/{len(BOOKS)} successful")
-        self.logger.info(f"   📖 Chapters: {len(all_chapters)} total")
-        self.logger.info(f"   📝 Verses: {total_verses} total")
+        self.logger.info(f"📚 Books: {successful_books}/{len(BOOKS)} successful")
+        self.logger.info(f"📖 Chapters: {len(all_chapters)} total")
+        self.logger.info(f"📝 Verses: {total_verses} total")
 
         if failed_books > 0:
-            self.logger.warning(f"   ⚠️ {failed_books} books failed to download")
+            self.logger.warning(f"⚠️ {failed_books} books failed to download")
 
         return all_chapters
 
@@ -638,9 +639,9 @@ async def download_bible_async(
     logger.info(f"🔤 Starting download for translation: {translation}")
     logger.info(f"📚 Books to download: {len(books)}")
     if len(books) <= 10:
-        logger.info(f"   📖 Books: {', '.join(books)}")
+        logger.info(f"📖 Books: {', '.join(books)}")
     else:
-        logger.info(f"   📖 Books: {', '.join(books[:5])}... and {len(books)-5} more")
+        logger.info(f"📖 Books: {', '.join(books[:5])}... and {len(books)-5} more")
 
     async with AsyncBibleDownloader(
         translation=translation,
@@ -685,12 +686,12 @@ async def download_bible_async(
 
             total_verses = sum(len(chapter["verses"]) for chapter in all_chapters)
             logger.info(f"📊 Download summary for {translation}:")
-            logger.info(f"   📚 Books: {successful_books}/{len(books)} successful")
-            logger.info(f"   📖 Chapters: {len(all_chapters)} total")
-            logger.info(f"   📝 Verses: {total_verses} total")
+            logger.info(f"📚 Books: {successful_books}/{len(books)} successful")
+            logger.info(f"📖 Chapters: {len(all_chapters)} total")
+            logger.info(f"📝 Verses: {total_verses} total")
 
             if failed_books > 0:
-                logger.warning(f"   ⚠️ {failed_books} books failed to download")
+                logger.warning(f"⚠️ {failed_books} books failed to download")
 
             return all_chapters
 
@@ -939,7 +940,7 @@ async def process_single_book(
                         f.write(format_as_xml(book_data))
 
             logger.info(
-                f"    ✅ Saved {book} for {translation} in {len(formats)} format(s)"
+                f"✅ Saved {book} for {translation} in {len(formats)} format(s)"
             )
         else:
             logger.warning(f"❌ Failed to download {book} for {translation}")
@@ -997,7 +998,7 @@ async def process_full_bible(
                         f.write(format_as_xml(full_bible_data))
 
             logger.info(
-                f"    ✅ Saved full Bible for {translation} with {len(full_bible_data)} chapters"
+                f"✅ Saved full Bible for {translation} with {len(full_bible_data)} chapters"
             )
         else:
             logger.error(f"❌ Failed to download full Bible for {translation}")
@@ -1031,6 +1032,9 @@ async def main_async():
         logger.info(f"📂 Output mode: {args.output_mode}")
         logger.info(f"📚 Books to download: {len(books_to_download)}")
 
+        # Start timing
+        start_time = time.time()
+
         # Create tasks for concurrent processing
         tasks = []
 
@@ -1056,7 +1060,7 @@ async def main_async():
             for translation in args.translations:
                 logger.info(f"🔤 Processing translation: {translation}")
                 for book in books_to_download:
-                    logger.info(f"   📖 Queuing: {book} ({translation})")
+                    logger.info(f"📖 Queuing: {book} ({translation})")
                     tasks.append(
                         process_single_book(
                             translation,
@@ -1077,6 +1081,10 @@ async def main_async():
         # Execute all tasks concurrently using asyncio.gather
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
+        # Calculate elapsed time
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
         # Check for any exceptions
         exceptions = [r for r in results if isinstance(r, Exception)]
         if exceptions:
@@ -1084,11 +1092,25 @@ async def main_async():
                 f"⚠️ Encountered {len(exceptions)} exceptions during download"
             )
             for exc in exceptions[:5]:  # Show first 5 exceptions
-                logger.error(f"  ❌ Exception: {exc}")
+                logger.error(f" ❌ Exception: {exc}")
+
+        # Format elapsed time for display
+        if elapsed_time < 60:
+            time_str = f"{elapsed_time:.2f} seconds"
+        elif elapsed_time < 3600:
+            minutes = int(elapsed_time // 60)
+            seconds = elapsed_time % 60
+            time_str = f"{minutes} minutes {seconds:.2f} seconds"
+        else:
+            hours = int(elapsed_time // 3600)
+            minutes = int((elapsed_time % 3600) // 60)
+            seconds = elapsed_time % 60
+            time_str = f"{hours} hours {minutes} minutes {seconds:.2f} seconds"
 
         logger.info(
             f"✅ Download process completed successfully! Processed {len(tasks)} items."
         )
+        logger.info(f"⏱️ Total execution time: {time_str}")
 
     except Exception as e:
         logger.error(f"❌ An error occurred during download: {str(e)}")
