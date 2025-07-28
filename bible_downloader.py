@@ -17,7 +17,7 @@ This module provides:
 
 Author: Bible Gateway Downloader Team
 License: MIT
-Version: 2.1.0 - True Async Edition
+Version: 2.1.1 - True Async Edition
 """
 
 import argparse
@@ -36,7 +36,7 @@ import aiohttp
 from aiohttp import ClientTimeout, TCPConnector
 from bs4 import BeautifulSoup
 from meaningless import JSONDownloader
-from meaningless.utilities.common import get_page, remove_superscript_numbers_in_passage
+from meaningless.utilities.common import get_page
 
 # =============================================================================
 # CONFIGURATION CONSTANTS
@@ -600,7 +600,7 @@ class AsyncBibleDownloader:
 
             # Use JSONDownloader directly - it handles all parsing through meaningless library
             downloader = JSONDownloader(
-                translation=self.translation, strip_excess_whitespace=True
+                translation=self.translation, show_passage_numbers=False, strip_excess_whitespace=True
             )
 
             # Set the downloader to use our temporary directory
@@ -637,15 +637,8 @@ class AsyncBibleDownloader:
                     # Convert from dict format to list format
                     for verse_num in sorted(chapter_verses.keys(), key=int):
                         verse_text = chapter_verses[verse_num]
-                        # Remove superscript numbers and clean up the verse text
-                        cleaned_verse = remove_superscript_numbers_in_passage(
-                            verse_text
-                        )
-                        # Remove multiple whitespace characters and newlines from within the text
-                        cleaned_verse = re.sub(r"\s+", " ", cleaned_verse)
-                        cleaned_verse = cleaned_verse.strip()
                         if cleaned_verse:
-                            verses.append(cleaned_verse)
+                            verses.append(verse_text)
 
             if not verses:
                 self.logger.warning(
