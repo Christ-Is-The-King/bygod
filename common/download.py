@@ -41,7 +41,40 @@ logger = logging.getLogger("colored")
 logger.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler()
 
-TRANSLATIONS = BIBLE_TRANSLATIONS.keys()
+# Only Supported version available for download
+TRANSLATIONS = [
+    "AMP",
+    "ASV",
+    "AKJV",
+    "BRG",
+    "CSB",
+    "EHV",
+    "ESV",
+    "ESVUK",
+    "GNV",
+    "GW",
+    "ISV",
+    "JUB",
+    "KJV",
+    "KJ21",
+    "LEB",
+    "LSB",
+    "MEV",
+    "NASB",
+    "NASB1995",
+    "NET",
+    "NIV",
+    "NIVUK",
+    "NKJV",
+    "NLT",
+    "NLV",
+    "NOG",
+    "NRSV",
+    "NRSVUE",
+    "RSV",
+    "WEB",
+    "YLT",
+]
 
 # List of all 66 Bible books in order
 BOOKS = [
@@ -67,7 +100,7 @@ BOOKS = [
     "Psalms",
     "Proverbs",
     "Ecclesiastes",
-    "Song of Songs",
+    "Song of Solomon",
     "Isaiah",
     "Jeremiah",
     "Lamentations",

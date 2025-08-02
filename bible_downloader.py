@@ -304,8 +304,8 @@ class AsyncBibleDownloader:
         # Session will be created when needed
         self.session: Optional[aiohttp.ClientSession] = None
 
-        # Set up logging - will inherit from parent logger configuration
-        self.logger = logging.getLogger(f"AsyncBibleDownloader.{translation}")
+        # Set up logging - use the main logger to ensure consistent verbosity
+        self.logger = logging.getLogger("bible_downloader")
 
         # Store original get_page function for restoration
         self._original_get_page = get_page
@@ -649,9 +649,10 @@ class AsyncBibleDownloader:
         import tempfile
 
         temp_dir = None
+        start_time = time.time()
         try:
             # Log the download attempt
-            self.logger.info(f"📖 Downloading {book} {chapter} ({self.translation})")
+            self.logger.info(f"📖 Starting {book} {chapter} ({self.translation})")
 
             # Create a temporary directory for this download
             temp_dir = tempfile.mkdtemp(
@@ -668,7 +669,9 @@ class AsyncBibleDownloader:
 
             # Get the chapter using meaningless library
             # The JSONDownloader will use our monkey-patched get_page function
-            result = downloader.download_chapter(book, chapter)
+            # Run the synchronous download_chapter in a thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, downloader.download_chapter, book, chapter)
 
             if result != 1:  # JSONDownloader returns 1 on success
                 self.logger.warning(
@@ -706,8 +709,9 @@ class AsyncBibleDownloader:
                 )
                 return None
 
+            duration = time.time() - start_time
             self.logger.info(
-                f"✅ Downloaded {book} {chapter} ({self.translation}): {len(verses)} verses"
+                f"✅ Completed {book} {chapter} ({self.translation}): {len(verses)} verses in {duration:.2f}s"
             )
 
             return {"book": book, "chapter": str(chapter), "verses": verses}
@@ -748,10 +752,6 @@ class AsyncBibleDownloader:
             self.download_chapter(book, chapter)
             for chapter in range(1, chapter_count + 1)
         ]
-
-        self.logger.info(
-            f"⚡ Executing {len(tasks)} concurrent chapter downloads for {book}"
-        )
 
         # Execute all chapter downloads concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -1205,9 +1205,7 @@ async def process_single_book(
                     with open(output_file, "w", encoding="utf-8") as f:
                         f.write(format_as_xml(book_data))
 
-            logger.info(
-                f"✅ Saved {book} for {translation} in {len(formats)} format(s)"
-            )
+
         else:
             logger.error(f"❌ Failed to download {book} for {translation}")
 
@@ -1358,8 +1356,7 @@ async def main_async():
                         )
                     )
 
-        logger.info(f"⚡ Created {len(tasks)} concurrent download tasks")
-        logger.info("🚀 Starting concurrent execution...")
+
 
         # Execute all tasks concurrently using asyncio.gather
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -1390,8 +1387,10 @@ async def main_async():
             seconds = elapsed_time % 60
             time_str = f"{hours} hours {minutes} minutes {seconds:.2f} seconds"
 
+        successful_items = len(tasks) - len(exceptions)
+        failed_items = len(exceptions)
         logger.info(
-            f"✅ Download process completed successfully! Processed {len(tasks)} items."
+            f"✅ Processed item(s) completed: {successful_items}, Failed: {failed_items}"
         )
         logger.info(f"⏱️ Total execution time: {time_str}")
 
