@@ -101,7 +101,7 @@ BOOKS = [
     "Psalms",
     "Proverbs",
     "Ecclesiastes",
-    "Song of Songs",
+    "Song of Solomon",
     "Isaiah",
     "Jeremiah",
     "Lamentations",
@@ -161,24 +161,63 @@ DEFAULT_TIMEOUT = 300
 # =============================================================================
 
 
-def setup_logging(name: str = "bible_downloader") -> logging.Logger:
-    """Set up colored logging for the downloader."""
+def setup_logging(
+    name: str = "bible_downloader",
+    verbose: int = 0,
+    quiet: bool = False,
+    log_level: str = "INFO",
+    error_log_file: str = None,
+) -> logging.Logger:
+    """
+    Set up colored logging for the downloader with configurable verbosity and error logging.
+    
+    Args:
+        name: Logger name
+        verbose: Verbosity level (0=WARNING, 1=INFO, 2=DEBUG, 3+=ALL)
+        quiet: Suppress all output except errors
+        log_level: Explicit log level override
+        error_log_file: File to log errors to in clean format
+        
+    Returns:
+        Configured logger
+    """
     import colorlog
 
     # Create logger
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    
+    # Determine log level based on verbosity and quiet flags
+    if quiet:
+        console_level = logging.ERROR
+    elif verbose == 0:
+        console_level = logging.WARNING
+    elif verbose == 1:
+        console_level = logging.INFO
+    elif verbose >= 2:
+        console_level = logging.DEBUG
+    else:
+        console_level = logging.INFO
+    
+    # Override with explicit log level if provided
+    if log_level:
+        console_level = getattr(logging, log_level.upper())
+    
+    # Set logger level to match console level for quiet mode
+    if quiet:
+        logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(min(logging.DEBUG, console_level))
 
     # Avoid duplicate handlers
     if logger.handlers:
         return logger
 
     # Create console handler with color
-    handler = colorlog.StreamHandler()
-    handler.setLevel(logging.INFO)
+    console_handler = colorlog.StreamHandler()
+    console_handler.setLevel(console_level)
 
-    # Create formatter
-    formatter = colorlog.ColoredFormatter(
+    # Create formatter for console
+    console_formatter = colorlog.ColoredFormatter(
         "%(log_color)s%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%H:%M:%S",
         log_colors={
@@ -190,8 +229,29 @@ def setup_logging(name: str = "bible_downloader") -> logging.Logger:
         },
     )
 
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
+    # Add error file handler if specified
+    if error_log_file:
+        # Create logs directory if it doesn't exist
+        log_dir = os.path.dirname(error_log_file)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+            
+        file_handler = logging.FileHandler(error_log_file, mode='a', encoding='utf-8')
+        file_handler.setLevel(logging.ERROR)
+        
+        # Clean format for error file (no colors, more detailed)
+        file_formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
+        
+        logger.info(f"📝 Error logging enabled: {error_log_file}")
 
     return logger
 
@@ -244,8 +304,8 @@ class AsyncBibleDownloader:
         # Session will be created when needed
         self.session: Optional[aiohttp.ClientSession] = None
 
-        # Set up logging
-        self.logger = setup_logging(f"AsyncBibleDownloader.{translation}")
+        # Set up logging - will inherit from parent logger configuration
+        self.logger = logging.getLogger(f"AsyncBibleDownloader.{translation}")
 
         # Store original get_page function for restoration
         self._original_get_page = get_page
@@ -612,7 +672,7 @@ class AsyncBibleDownloader:
 
             if result != 1:  # JSONDownloader returns 1 on success
                 self.logger.warning(
-                    f"❌ Failed to download {book} {chapter} ({self.translation})"
+                    f"Failed to download {book} {chapter} ({self.translation})"
                 )
                 return None
 
@@ -637,7 +697,7 @@ class AsyncBibleDownloader:
                     # Convert from dict format to list format
                     for verse_num in sorted(chapter_verses.keys(), key=int):
                         verse_text = chapter_verses[verse_num]
-                        if cleaned_verse:
+                        if verse_text:
                             verses.append(verse_text)
 
             if not verses:
@@ -705,7 +765,7 @@ class AsyncBibleDownloader:
             chapter_num = i + 1
             if isinstance(result, Exception):
                 self.logger.error(
-                    f"❌ Error downloading {book} {chapter_num} ({self.translation}): {result}"
+                    f"Error downloading {book} {chapter_num} ({self.translation}): {result}"
                 )
                 failed_chapters += 1
             elif result:
@@ -863,7 +923,7 @@ async def download_bible_async(
                         f"✅ Completed {book} ({translation}): {len(result)} chapters, {total_verses} verses"
                     )
                 else:
-                    logger.warning(f"❌ Failed to download {book} ({translation})")
+                    logger.error(f"❌ Failed to download {book} ({translation})")
                     failed_books += 1
 
             total_verses = sum(len(chapter["verses"]) for chapter in all_chapters)
@@ -1060,6 +1120,33 @@ def parse_args():
         help="Comma-separated list of specific books to download (default: all books)",
     )
 
+    # Verbosity and logging options
+    parser.add_argument(
+        "-v", "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity level (-v for INFO, -vv for DEBUG, -vvv for all)",
+    )
+
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors",
+    )
+
+    parser.add_argument(
+        "--log-errors",
+        type=str,
+        help="Log errors to specified file in clean format",
+    )
+
+    parser.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level (default: INFO)",
+    )
+
     return parser.parse_args()
 
 
@@ -1122,7 +1209,7 @@ async def process_single_book(
                 f"✅ Saved {book} for {translation} in {len(formats)} format(s)"
             )
         else:
-            logger.warning(f"❌ Failed to download {book} for {translation}")
+            logger.error(f"❌ Failed to download {book} for {translation}")
 
     except Exception as e:
         logger.error(f"❌ Error processing {book} for {translation}: {str(e)}")
@@ -1190,8 +1277,14 @@ async def main_async():
     """Main async function to orchestrate the download process."""
     args = parse_args()
 
-    # Set up logging
-    logger = setup_logging("bible_downloader")
+    # Set up logging with verbosity and error logging options
+    logger = setup_logging(
+        name="bible_downloader",
+        verbose=args.verbose,
+        quiet=args.quiet,
+        log_level=args.log_level,
+        error_log_file=args.log_errors,
+    )
 
     try:
         # Create output directory
@@ -1202,7 +1295,7 @@ async def main_async():
         if args.books:
             books_to_download = [book.strip() for book in args.books.split(",")]
 
-        # Log initial configuration
+            # Log initial configuration
         logger.info(f"🚀 Starting download of {len(args.translations)} translations")
         logger.info(
             f"⚡ Using TRUE async concurrency with rate limit of {args.rate_limit}"
@@ -1210,6 +1303,17 @@ async def main_async():
         logger.info(f"📁 Output formats: {', '.join(args.formats)}")
         logger.info(f"📂 Output mode: {args.output_mode}")
         logger.info(f"📚 Books to download: {len(books_to_download)}")
+        
+        # Log verbosity and logging configuration
+        if args.quiet:
+            logger.info("🔇 Quiet mode enabled - only errors will be shown")
+        elif args.verbose > 0:
+            logger.info(f"🔊 Verbosity level: {args.verbose} ({logging.getLevelName(logger.level)})")
+        else:
+            logger.info(f"🔊 Log level: {logging.getLevelName(logger.level)}")
+        
+        if args.log_errors:
+            logger.info(f"📝 Error logging enabled: {args.log_errors}")
 
         # Start timing
         start_time = time.time()

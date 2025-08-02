@@ -124,6 +124,40 @@ Download only full Bible (no individual books):
 bygod --translations NIV --output-mode book
 ```
 
+### Verbosity and Logging
+
+Control output verbosity and error logging:
+
+**Quiet mode (only errors):**
+```bash
+bygod --translations NIV -q
+```
+
+**Verbose mode (more detailed output):**
+```bash
+bygod --translations NIV -v
+```
+
+**Debug mode (maximum detail):**
+```bash
+bygod --translations NIV -vv
+```
+
+**Log errors to file:**
+```bash
+bygod --translations NIV --log-errors logs/bible_errors.log
+```
+
+**Set specific log level:**
+```bash
+bygod --translations NIV --log-level DEBUG
+```
+
+**Combine options:**
+```bash
+bygod --translations NIV -v --log-errors logs/errors.log --log-level WARNING
+```
+
 ## 📋 Command Line Options
 
 | Option | Description | Default |
@@ -137,6 +171,10 @@ bygod --translations NIV --output-mode book
 | `--retry-delay` | Delay between retries (seconds) | `2` |
 | `--timeout` | Request timeout (seconds) | `300` |
 | `--books` | Comma-separated list of specific books | All books |
+| `-v, --verbose` | Increase verbosity level (-v for INFO, -vv for DEBUG) | `0` |
+| `-q, --quiet` | Suppress all output except errors | `False` |
+| `--log-level` | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO` |
+| `--log-errors` | Log errors to specified file in clean format | `None` |
 
 ## 📚 Supported Translations
 
