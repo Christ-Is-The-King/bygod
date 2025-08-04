@@ -1,1 +1,1 @@
-"""Utilities package for Bible Gateway Downloader."""
+"""Utilities package for ByGoD."""

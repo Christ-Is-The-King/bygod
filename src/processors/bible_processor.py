@@ -1,5 +1,5 @@
 """
-Bible processing functions for Bible Gateway Downloader.
+Bible processing functions for ByGoD.
 
 This module contains functions for processing full Bible downloads for individual
 translations.

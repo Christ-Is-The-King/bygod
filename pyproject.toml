@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bygod"
-version = "3.0.0"
+version = "3.0.1"
 description = "A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Bible Gateway Downloader Team", email = "ByGoD@rapdirabbit.software"}
+    {name = "ByGoD Team", email = "ByGoD@rapdirabbit.software"}
 ]
 maintainers = [
-    {name = "Bible Gateway Downloader Team", email = "ByGoD@rapdirabbit.software"}
+    {name = "ByGoD Team", email = "ByGoD@rapdirabbit.software"}
 ]
 keywords = ["bible", "download", "biblegateway", "async", "scripture", "religion", "json", "csv", "xml", "yaml"]
 classifiers = [
@@ -63,10 +63,10 @@ dev = [
 bygod = "main:main"
 
 [project.urls]
-Homepage = "https://github.com/Christ-Is-The-King/bible-gateway-downloader"
-Documentation = "https://github.com/Christ-Is-The-King/bible-gateway-downloader#readme"
-Repository = "https://github.com/Christ-Is-The-King/bible-gateway-downloader"
-"Bug Tracker" = "https://github.com/Christ-Is-The-King/bible-gateway-downloader/issues"
+Homepage = "https://github.com/Christ-Is-The-King/bygod"
+Documentation = "https://github.com/Christ-Is-The-King/bygod#readme"
+Repository = "https://github.com/Christ-Is-The-King/bygod"
+"Bug Tracker" = "https://github.com/Christ-Is-The-King/bygod/issues"
 
 [tool.setuptools]
 py-modules = ["main"]

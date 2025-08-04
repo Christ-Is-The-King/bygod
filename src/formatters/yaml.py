@@ -1,5 +1,5 @@
 """
-YAML formatters for Bible Gateway Downloader.
+YAML formatters for ByGoD.
 
 This module contains functions for formatting Bible data into YAML format
 with metadata and structured hierarchy.

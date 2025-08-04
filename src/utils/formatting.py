@@ -1,5 +1,5 @@
 """
-Formatting utilities for Bible Gateway Downloader.
+Formatting utilities for ByGoD.
 
 This module contains utility functions for formatting durations, numbers, and other
 display elements.

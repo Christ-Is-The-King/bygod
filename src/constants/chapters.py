@@ -1,5 +1,5 @@
 """
-Chapter count constants for Bible Gateway Downloader.
+Chapter count constants for ByGoD.
 
 This module contains chapter counts and related constants for all 66 Bible books.
 """

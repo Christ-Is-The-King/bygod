@@ -1,5 +1,5 @@
 """
-Master processing functions for Bible Gateway Downloader.
+Master processing functions for ByGoD.
 
 This module contains functions for processing multiple translations and creating
 combined output files containing all translations.

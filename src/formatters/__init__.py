@@ -1,5 +1,5 @@
 """
-Formatters package for Bible Gateway Downloader.
+Formatters package for ByGoD.
 
 This package contains modules for formatting Bible data into various output formats
 including JSON, CSV, XML, and YAML.

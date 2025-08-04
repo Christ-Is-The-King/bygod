@@ -1,5 +1,5 @@
 """
-CSV formatters for Bible Gateway Downloader.
+CSV formatters for ByGoD.
 
 This module contains functions for formatting Bible data into CSV format
 with metadata headers and structured data.

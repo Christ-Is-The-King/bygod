@@ -1,5 +1,5 @@
 """
-JSON formatters for Bible Gateway Downloader.
+JSON formatters for ByGoD.
 
 This module contains functions for formatting Bible data into JSON format
 with metadata and structured organization.

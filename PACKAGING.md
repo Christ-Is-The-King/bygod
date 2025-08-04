@@ -1,4 +1,4 @@
-# Packaging Guide for ByGoD (Bible Gateway Downloader)
+# Packaging Guide for ByGoD
 
 This document outlines the packaging and distribution process for the ByGoD project using Pipfile for dependency management.
 
@@ -225,7 +225,7 @@ pipenv run safety check
 ## 📋 File Structure
 
 ```
-bible-gateway-downloader/
+bygod/
 ├── Pipfile                 # Dependency definitions
 ├── Pipfile.lock           # Locked dependency versions
 ├── setup.py               # Package configuration (reads Pipfile)

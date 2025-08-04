@@ -1,1 +1,1 @@
-"""Tests package for Bible Gateway Downloader."""
+"""Tests package for ByGoD."""

@@ -1,1 +1,1 @@
-"""Bible Gateway Downloader source package."""
+"""ByGoD source package."""

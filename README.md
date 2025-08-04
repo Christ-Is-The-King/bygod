@@ -1,4 +1,4 @@
-# Bible Gateway Downloader - (ByGoD) True Async Edition
+# ByGoD
 
 A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com in multiple formats (JSON, CSV, YAML, XML) with genuine parallel downloads, retry mechanisms, and flexible output options.
 
@@ -26,8 +26,8 @@ pip install bygod
 
 1. **Clone the repository**:
    ```bash
-   git clone git@github.com:Christ-Is-The-King/bible-gateway-downloader.git
-   cd bible-gateway-downloader
+   git clone git@github.com:Christ-Is-The-King/bygod.git
+   cd bygod
    ```
 
 2. **Install pipenv** (if not already installed):
@@ -55,8 +55,8 @@ pip install bygod
 
 1. **Clone the repository**:
    ```bash
-   git clone git@github.com:Christ-Is-The-King/bible-gateway-downloader.git
-   cd bible-gateway-downloader
+   git clone git@github.com:Christ-Is-The-King/bygod.git
+   cd bygod
    ```
 
 2. **Create a virtual environment**:
@@ -258,7 +258,7 @@ bibles/
 The project has been refactored into a clean, modular structure:
 
 ```
-bible-gateway-downloader/
+bygod/
 ├── main.py                    # Main entry point
 ├── src/                       # Source code package
 │   ├── __init__.py

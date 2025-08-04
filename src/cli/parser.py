@@ -1,5 +1,5 @@
 """
-CLI parser and validation for Bible Gateway Downloader.
+CLI parser and validation for ByGoD.
 
 This module contains functions for parsing command-line arguments and validating
 user input for the Bible downloader application.
@@ -91,7 +91,7 @@ def validate_output_mode(mode: str) -> str:
 
 def parse_args():
     """
-    Parse command-line arguments for the Bible Gateway Downloader.
+    Parse command-line arguments for ByGoD.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments

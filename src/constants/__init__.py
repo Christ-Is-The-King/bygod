@@ -1,1 +1,1 @@
-"""Constants package for Bible Gateway Downloader."""
+"""Constants package for ByGoD."""

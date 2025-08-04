@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bible Gateway Downloader - True Async Edition
+ByGoD
 
 A comprehensive, truly asynchronous tool for downloading Bible translations from
 BibleGateway.com in multiple formats (JSON, CSV, YAML, XML) with genuine parallel
@@ -15,9 +15,9 @@ This module provides:
 - Organized output in structured directories
 - Comprehensive logging and progress tracking
 
-Author: Bible Gateway Downloader Team
+Author: ByGoD Team
 License: MIT
-Version: 3.0.0 - Clean Architecture & Quality Edition
+Version: 3.0.1 - Project Rename Edition
 """
 
 import asyncio
@@ -52,7 +52,7 @@ async def main_async():
     )
 
     # Log startup information
-    logger.info("🚀 Bible Gateway Downloader - True Async Edition")
+    logger.info("🚀 ByGoD")
     logger.info(f"📚 Translations: {', '.join(args.translations)}")
     logger.info(f"📖 Books: {args.books if args.books else 'All books'}")
     logger.info(f"📄 Formats: {', '.join(args.formats)}")
@@ -158,7 +158,7 @@ async def main_async():
 
 
 def main():
-    """Execute the Bible Gateway Downloader application."""
+    """Execute the ByGoD application."""
     try:
         # Run the async main function
         return asyncio.run(main_async())

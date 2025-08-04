@@ -1,5 +1,5 @@
 """
-XML formatters for Bible Gateway Downloader.
+XML formatters for ByGoD.
 
 This module contains functions for formatting Bible data into XML format
 with metadata and structured hierarchy.
