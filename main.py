@@ -17,7 +17,7 @@ This module provides:
 
 Author: ByGoD Team
 License: MIT
-Version: 3.0.1 - Project Rename Edition
+Version: 3.0.2 - CLI Improvements Edition
 """
 
 import asyncio
