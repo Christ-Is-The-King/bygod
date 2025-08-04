@@ -7,7 +7,7 @@ name = "bygod"
 version = "3.0.0"
 description = "A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     {name = "Bible Gateway Downloader Team", email = "ByGoD@rapdirabbit.software"}
 ]
@@ -60,7 +60,7 @@ dev = [
 ]
 
 [project.scripts]
-bygod = "bible_downloader:main"
+bygod = "main:main"
 
 [project.urls]
 Homepage = "https://github.com/Christ-Is-The-King/bible-gateway-downloader"
@@ -69,7 +69,8 @@ Repository = "https://github.com/Christ-Is-The-King/bible-gateway-downloader"
 "Bug Tracker" = "https://github.com/Christ-Is-The-King/bible-gateway-downloader/issues"
 
 [tool.setuptools]
-py-modules = ["bible_downloader"]
+py-modules = ["main"]
+packages = ["src"]
 
 [tool.black]
 line-length = 88
@@ -93,7 +94,7 @@ extend-exclude = '''
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["bible_downloader"]
+known_first_party = ["src"]
 
 [tool.mypy]
 python_version = "3.8"
