@@ -1,1 +1,0 @@
-# Bible Gateway Downloads package
