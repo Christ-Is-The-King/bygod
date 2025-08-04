@@ -56,13 +56,13 @@ async def main_async():
     logger.info(f"📚 Translations: {', '.join(args.translations)}")
     logger.info(f"📖 Books: {args.books if args.books else 'All books'}")
     logger.info(f"📄 Formats: {', '.join(args.formats)}")
-    logger.info(f"📁 Output Directory: {args.output_dir}")
+    logger.info(f"📁 Output Directory: {args.output}")
     logger.info(f"⚡ Concurrency: {args.rate_limit} concurrent requests")
     logger.info(f"🔄 Retries: {args.retries} (delay: {args.retry_delay}s)")
     logger.info(f"⏱️ Timeout: {args.timeout}s")
 
     # Create output directory
-    output_dir = Path(args.output_dir)
+    output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Parse books if specified
@@ -99,7 +99,7 @@ async def main_async():
     failed_translations = []
     for translation in args.translations:
         try:
-            logger.info(f"📖 Processing {translation}...")
+            logger.info(f"📖 Processing {translation}")
             if books_to_download:
                 # Download specific books
                 if args.output_mode in ["books", "all"]:

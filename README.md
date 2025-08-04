@@ -1,4 +1,4 @@
-# ByGoD
+# ByGoD - The Bible, By God - Bible Gateway Downloader
 
 A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com in multiple formats (JSON, CSV, YAML, XML) with genuine parallel downloads, retry mechanisms, and flexible output options.
 
@@ -93,24 +93,24 @@ pip install bygod
 
 Download a single translation in JSON format:
 ```bash
-bygod --translations NIV --formats json
+python main.py --translations NIV --formats json
 ```
 
 Download multiple translations in multiple formats:
 ```bash
-bygod --translations NIV,KJV,ESV --formats json,csv,xml
+python main.py --translations NIV,KJV,ESV --formats json,csv,xml,yaml
 ```
 
 Download specific books only:
 ```bash
-bygod --translations NIV --books Genesis,Exodus,Psalms
+python main.py --translations NIV --books Genesis,Exodus,Psalms
 ```
 
 ### Advanced Usage
 
 Download with custom rate limiting and retry settings:
 ```bash
-bygod \
+python main.py \
   --translations NIV,KJV \
   --formats json,csv \
   --rate-limit 10 \
@@ -121,7 +121,7 @@ bygod \
 
 Download only individual books (no full Bible):
 ```bash
-bygod --translations NIV --output-mode books
+python main.py --translations NIV --output-mode books
 ```
 
 Download only full Bible (no individual books):
@@ -166,38 +166,53 @@ bygod --translations NIV -v --log-errors logs/errors.log --log-level WARNING
 
 ## 📋 Sample Log Output
 
-Example log lines for chapter and book downloads:
-
 ```
-✅ Downloaded Psalms 149 (NIV): 9 verses in 2.3s
-✅ Downloaded Psalms 150 (NIV): 6 verses in 1.1s
-📊 Completed Psalms (NIV): 150/150 chapters, 2,385 total verses in 1m 57.6s
+12:15:50 - INFO - 🚀 ByGoD
+12:15:50 - INFO - 📚 Translations: NIV
+12:15:50 - INFO - 📖 Books: Genesis
+12:15:50 - INFO - 📄 Formats: json
+12:15:50 - INFO - 📁 Output Directory: ./bibles
+12:15:50 - INFO - ⚡ Concurrency: 5 concurrent requests
+12:15:50 - INFO - 🔄 Retries: 3 (delay: 2s)
+12:15:50 - INFO - ⏱️ Timeout: 300s
+12:15:50 - INFO - 📖 Processing NIV...
+12:15:50 - INFO - 📚 Starting download of Genesis (NIV)
+12:15:50 - INFO - 📖 Starting Genesis 1 (NIV)
+12:15:50 - INFO - 📖 Starting Genesis 2 (NIV)
+...
+12:15:57 - INFO - ✅ Downloaded Genesis 1 (NIV): 31 verses
+12:15:57 - INFO - ✅ Downloaded Genesis 2 (NIV): 25 verses
+12:15:57 - INFO - ✅ Downloaded Genesis 3 (NIV): 24 verses
+...
+12:16:14 - INFO - 📊 Completed Genesis (NIV): 50/50 chapters, 1,533 total verses in 24.1s
+12:16:14 - INFO - ⏱️ Total Time: 24.1s, Successful: NIV, Failed: 0 translations
 ```
-
-- Each chapter log shows the number of verses and the time taken for that chapter.
-- The book completion log shows the total chapters, total verses (comma-formatted), and the total time for the book.
 
 ## 📋 Command Line Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--translations` | Comma-separated list of Bible translations | `NIV` |
-| `--formats` | Output formats: json, csv, xml, yaml | `json` |
+| `--translations, -t` | Comma-separated list of Bible translations | `NIV` |
+| `--books, -b` | Comma-separated list of specific books | All books |
+| `--formats, -f` | Output formats: json, csv, xml, yaml | `json` |
 | `--output-mode` | Output mode: book, books, all | `all` |
-| `--output-dir` | Directory to save downloaded Bibles | `./bibles` |
+| `--output, -o` | Directory to save downloaded Bibles | `./bibles` |
+| `--combined, -c` | Generate combined file for multiple translations | `False` |
 | `--rate-limit` | Maximum concurrent requests | `5` |
 | `--retries` | Maximum retry attempts | `3` |
 | `--retry-delay` | Delay between retries (seconds) | `2` |
 | `--timeout` | Request timeout (seconds) | `300` |
-| `--books` | Comma-separated list of specific books | All books |
-| `-v, --verbose` | Increase verbosity level (-v for INFO, -vv for DEBUG) | `0` |
+| `-v, --verbose` | Increase verbosity level (-v: INFO, -vv: DEBUG, -vvv: TRACE) | `0` |
 | `-q, --quiet` | Suppress all output except errors | `False` |
 | `--log-level` | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO` |
-| `--log-errors` | Log errors to specified file in clean format | `None` |
+| `--log-errors` | Log errors to specified file | `None` |
+| `--dry-run` | Show what would be downloaded without downloading | `False` |
+| `--resume` | Resume interrupted downloads by skipping existing files | `False` |
+| `--force` | Force re-download even if files already exist | `False` |
 
 ## 📚 Supported Translations
 
-The downloader supports 30+ Bible translations including:
+The downloader supports 26 Bible translations:
 
 - **NIV** - New International Version
 - **KJV** - King James Version
@@ -235,10 +250,10 @@ The downloader creates a well-organized directory structure:
 ```
 bibles/
 ├── NIV/
-│   ├── NIV.json          # Full Bible in JSON
-│   ├── NIV.csv           # Full Bible in CSV
-│   ├── NIV.xml           # Full Bible in XML
-│   ├── NIV.yml           # Full Bible in YAML
+│   ├── bible.json        # Full Bible in JSON
+│   ├── bible.csv         # Full Bible in CSV
+│   ├── bible.xml         # Full Bible in XML
+│   ├── bible.yml         # Full Bible in YAML
 │   └── books/
 │       ├── Genesis.json  # Individual book in JSON
 │       ├── Genesis.csv   # Individual book in CSV
@@ -246,8 +261,8 @@ bibles/
 │       ├── Genesis.yml   # Individual book in YAML
 │       └── ...
 ├── KJV/
-│   ├── KJV.json
-│   ├── KJV.csv
+│   ├── bible.json
+│   ├── bible.csv
 │   └── books/
 │       └── ...
 └── ...
@@ -258,13 +273,15 @@ bibles/
 The project has been refactored into a clean, modular structure:
 
 ```
-bygod/
+bible-gateway-downloader/
 ├── main.py                    # Main entry point
 ├── src/                       # Source code package
 │   ├── __init__.py
 │   ├── constants/             # Bible translations and books data
 │   │   ├── translations.py    # BIBLE_TRANSLATIONS dictionary
-│   │   └── books.py          # BOOKS list
+│   │   ├── books.py          # BOOKS list
+│   │   ├── chapters.py       # Chapter counts
+│   │   └── cli.py            # CLI constants
 │   ├── core/                  # Core downloader functionality
 │   │   └── downloader.py      # AsyncBibleDownloader class
 │   ├── utils/                 # Utility functions
@@ -275,9 +292,15 @@ bygod/
 │   ├── processors/            # Processing logic
 │   │   ├── bible_processor.py # Bible download processing
 │   │   └── master_processor.py # Master file processing
-│   └── utils/                 # Utility functions
-│       ├── formatting.py      # Duration and number formatting
-│       └── logging.py         # Logging setup and configuration
+│   ├── formatters/            # Output format handlers
+│   │   ├── json.py           # JSON formatting
+│   │   ├── csv.py            # CSV formatting
+│   │   ├── xml.py            # XML formatting
+│   │   └── yaml.py           # YAML formatting
+│   └── tests/                 # Test suite
+│       ├── test_constants.py  # Constants tests
+│       ├── test_core.py       # Core functionality tests
+│       └── test_utils.py      # Utility tests
 ├── pyproject.toml             # Project configuration
 ├── README.md                  # This file
 └── ... (other files)

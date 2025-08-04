@@ -67,16 +67,16 @@ async def process_full_bible(
             try:
                 if fmt == "json":
                     formatted_data = format_as_json(data, translation)
-                    output_file = translation_dir / f"{translation}_full.json"
+                    output_file = translation_dir / "bible.json"
                 elif fmt == "csv":
                     formatted_data = format_as_csv(data, translation)
-                    output_file = translation_dir / f"{translation}_full.csv"
+                    output_file = translation_dir / "bible.csv"
                 elif fmt == "xml":
                     formatted_data = format_as_xml(data, translation)
-                    output_file = translation_dir / f"{translation}_full.xml"
+                    output_file = translation_dir / "bible.xml"
                 elif fmt == "yaml":
                     formatted_data = format_as_yaml(data, translation)
-                    output_file = translation_dir / f"{translation}_full.yml"
+                    output_file = translation_dir / "bible.yml"
                 else:
                     continue
 

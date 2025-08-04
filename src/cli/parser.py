@@ -111,7 +111,7 @@ Examples:
   python main.py --translations NIV --books "Genesis,Psalms,Matthew"
 
   # Download with custom output directory and verbose logging
-  python main.py --translations NIV --output-dir ./my_bibles -vv
+  python main.py --translations NIV --output ./my_bibles -vv
 
   # Download with combined output file
   python main.py --translations NIV,KJV --combined
@@ -164,7 +164,7 @@ Examples:
 
     # Output directory
     parser.add_argument(
-        "--output-dir",
+        "--output",
         "-o",
         type=str,
         default="./bibles",

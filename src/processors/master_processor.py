@@ -42,7 +42,7 @@ def combine_existing_translations(
         True if combination was successful, False otherwise
     """
     if len(translations) < 2:
-        logger.warning("Need at least 2 translations to create combined file")
+        logger.warning("⚠️ Need at least 2 translations to create combined file")
         return False
 
     # Check if all translation files exist
@@ -54,13 +54,13 @@ def combine_existing_translations(
         found_files = []
         for fmt in formats:
             if fmt == "json":
-                full_file = translation_dir / f"{translation}_full.json"
+                full_file = translation_dir / "bible.json"
             elif fmt == "csv":
-                full_file = translation_dir / f"{translation}_full.csv"
+                full_file = translation_dir / "bible.csv"
             elif fmt == "xml":
-                full_file = translation_dir / f"{translation}_full.xml"
+                full_file = translation_dir / "bible.xml"
             elif fmt == "yaml":
-                full_file = translation_dir / f"{translation}_full.yml"
+                full_file = translation_dir / "bible.yml"
             else:
                 continue
 
@@ -69,7 +69,7 @@ def combine_existing_translations(
                 break
 
         if not found_files:
-            logger.warning(f"No full Bible file found for {translation}")
+            logger.warning(f"⚠️ No full Bible file found for {translation}")
             return False
 
         # Load the first available format
@@ -88,12 +88,12 @@ def combine_existing_translations(
                     all_data[translation] = passages
                 else:
                     logger.warning(
-                        f"Loading {fmt} format for combination not supported yet"
+                        f"⚠️ Loading {fmt} format for combination not supported yet"
                     )
                     return False
 
         except Exception as e:
-            logger.error(f"Error loading {translation} data: {e}")
+            logger.error(f"❌ Error loading {translation} data: {e}")
             return False
 
     # Create combined files
@@ -118,10 +118,10 @@ def combine_existing_translations(
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(formatted_data)
 
-            logger.info(f"Created combined file: {output_file}")
+            logger.info(f"📄 Created combined file: {output_file}")
 
         except Exception as e:
-            logger.error(f"Error creating combined {fmt} file: {e}")
+            logger.error(f"❌ Error creating combined {fmt} file: {e}")
             success = False
 
     return success
@@ -153,10 +153,8 @@ async def process_master_file(
         filename: Base filename for combined file
     """
     if len(translations) < 2:
-        logger.warning("Need at least 2 translations to create combined file")
+        logger.warning("⚠️ Need at least 2 translations to create combined file")
         return
-
-    logger.info(f"Processing {len(translations)} translations for combined file...")
 
     # Download all translations
     all_data = {}
@@ -164,7 +162,6 @@ async def process_master_file(
 
     for translation in translations:
         try:
-            logger.info(f"Downloading {translation} for combined file...")
             start_time = time.time()
 
             data = await download_bible_async(
@@ -179,19 +176,19 @@ async def process_master_file(
 
             if data:
                 all_data[translation] = data
-                logger.info(f"Downloaded {translation} in {download_time:.2f}s")
+                logger.info(f"✅ Downloaded {translation} in {download_time:.2f}s")
             else:
                 failed_translations.append(translation)
-                logger.error(f"Failed to download {translation}")
+                logger.error(f"❌ Failed to download {translation}")
 
         except Exception as e:
             failed_translations.append(translation)
-            logger.error(f"Error downloading {translation}: {e}")
+            logger.error(f"❌ Error downloading {translation}: {e}")
 
     if failed_translations:
-        logger.warning(f"Failed translations: {', '.join(failed_translations)}")
+        logger.warning(f"⚠️ Failed translations: {', '.join(failed_translations)}")
         if len(all_data) < 2:
-            logger.error("Not enough successful downloads to create combined file")
+            logger.error("❌ Not enough successful downloads to create combined file")
             return
 
     # Create combined files
@@ -216,18 +213,18 @@ async def process_master_file(
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(formatted_data)
 
-            logger.info(f"Created combined file: {output_file}")
+            logger.info(f"📄 Created combined file: {output_file}")
 
         except Exception as e:
-            logger.error(f"Error creating combined {fmt} file: {e}")
+            logger.error(f"❌ Error creating combined {fmt} file: {e}")
             success = False
 
     if success:
         logger.info(
-            f"Successfully created combined files for {len(all_data)} translations"
+            f"🎉 Successfully created combined files for {len(all_data)} translations"
         )
     else:
-        logger.error("Some combined files failed to create")
+        logger.error("❌ Some combined files failed to create")
 
 
 # Import time module for timing
