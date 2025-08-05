@@ -102,30 +102,33 @@ def parse_args():
         epilog="""
 Examples:
   # Download NIV Bible in JSON format
-  python main.py --translations NIV --formats json
+  python main.py -t NIV -f json
 
   # Download multiple translations in all formats
-  python main.py --translations NIV,KJV,ESV --formats json,csv,xml,yaml
+  python main.py -t NIV,KJV,ESV -f json,csv,xml,yaml
 
   # Download specific books only
-  python main.py --translations NIV --books "Genesis,Psalms,Matthew"
+  python main.py -t NIV -b "Genesis,Psalms,Matthew"
 
   # Download with custom output directory and verbose logging
-  python main.py --translations NIV --output ./my_bibles -vv
+  python main.py -t NIV -o ./my_bibles -vv
 
   # Download with combined output file
-  python main.py --translations NIV,KJV --combined
+  python main.py -t NIV,KJV --combined
 
-  # Download with custom rate limiting and retry settings
-  python main.py --translations NIV --rate-limit 3 --retries 5 --timeout 60
+  # Download with custom concurrency and retry settings
+  python main.py -t NIV -c 3 --retries 5 --timeout 60
+
+  # Download with specific output mode
+  python main.py -t NIV -m books
         """,
     )
 
     # Translation selection
     wrapped_choices = textwrap.fill(", ".join(BIBLE_TRANSLATIONS.keys()), width=80)
     parser.add_argument(
-        "--translations",
         "-t",
+        "--translations",
         type=validate_bibles,
         default=["NIV"],
         help=f"Select 1 or more translations to download from this list "
@@ -134,8 +137,8 @@ Examples:
 
     # Book selection
     parser.add_argument(
-        "--books",
         "-b",
+        "--books",
         type=str,
         help="Comma-separated list of specific books to download "
         "(e.g., 'Genesis,Psalms,Matthew'). If not specified, downloads all books.",
@@ -143,8 +146,8 @@ Examples:
 
     # Output formats
     parser.add_argument(
-        "--formats",
         "-f",
+        "--formats",
         type=validate_format,
         default=["json"],
         help=f"Choose 1 or more formats (using comma separated values)\n"
@@ -153,7 +156,8 @@ Examples:
 
     # Output mode
     parser.add_argument(
-        "--output-mode",
+        "-m",
+        "--mode",
         type=validate_output_mode,
         default="all",
         choices=["book", "books", "all"],
@@ -164,8 +168,8 @@ Examples:
 
     # Output directory
     parser.add_argument(
-        "--output",
         "-o",
+        "--output",
         type=str,
         default="./bibles",
         help="Directory to save downloaded Bibles (default: ./bibles)",
@@ -174,7 +178,6 @@ Examples:
     # Combined output
     parser.add_argument(
         "--combined",
-        "-c",
         action="store_true",
         help="Generate a combined file containing all downloaded translations "
         "(only works when downloading multiple translations)",
@@ -182,7 +185,8 @@ Examples:
 
     # Concurrency and performance
     parser.add_argument(
-        "--rate-limit",
+        "-c",
+        "--concurrency",
         type=int,
         default=5,
         help="Maximum concurrent requests to BibleGateway (default: 5)",
@@ -196,7 +200,8 @@ Examples:
     )
 
     parser.add_argument(
-        "--retry-delay",
+        "-d",
+        "--delay",
         type=int,
         default=2,
         help="Delay in seconds between retry attempts (default: 2)",
@@ -219,10 +224,14 @@ Examples:
     )
 
     parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Suppress all output except errors"
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
     )
 
     parser.add_argument(
+        "-ll",
         "--log-level",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -231,17 +240,21 @@ Examples:
     )
 
     parser.add_argument(
-        "--log-errors", type=str, help="Log errors to the specified file"
+        "--log-errors",
+        type=str,
+        help="Log errors to the specified file"
     )
 
     # Advanced options
     parser.add_argument(
+        "-dr",
         "--dry-run",
         action="store_true",
         help="Show what would be downloaded without actually downloading",
     )
 
     parser.add_argument(
+        "-r",
         "--resume",
         action="store_true",
         help="Resume interrupted downloads by skipping existing files",

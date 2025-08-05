@@ -93,40 +93,40 @@ pip install bygod
 
 Download a single translation in JSON format:
 ```bash
-python main.py --translations NIV --formats json
+python main.py -t NIV -f json
 ```
 
 Download multiple translations in multiple formats:
 ```bash
-python main.py --translations NIV,KJV,ESV --formats json,csv,xml,yaml
+python main.py -t NIV,KJV,ESV -f json,csv,xml,yaml
 ```
 
 Download specific books only:
 ```bash
-python main.py --translations NIV --books Genesis,Exodus,Psalms
+python main.py -t NIV -b Genesis,Exodus,Psalms
 ```
 
 ### Advanced Usage
 
-Download with custom rate limiting and retry settings:
+Download with custom concurrency and retry settings:
 ```bash
 python main.py \
-  --translations NIV,KJV \
-  --formats json,csv \
-  --rate-limit 10 \
+  -t NIV,KJV \
+  -f json,csv \
+  -c 10 \
   --retries 5 \
-  --retry-delay 3 \
+  -d 3 \
   --timeout 600
 ```
 
 Download only individual books (no full Bible):
 ```bash
-python main.py --translations NIV --output-mode books
+python main.py -t NIV -m books
 ```
 
 Download only full Bible (no individual books):
 ```bash
-bygod --translations NIV --output-mode book
+bygod -t NIV -m book
 ```
 
 ### Verbosity and Logging
@@ -141,25 +141,25 @@ Control output verbosity and error logging:
 **Verbose mode (more detailed output):**
 
 ```
-bygod --translations NIV --output-mode books -v
+bygod -t NIV -m books -v
 ```
 
 **Log errors to file:**
 
 ```
-bygod --translations NIV --log-errors logs/bible_errors.log
+bygod -t NIV --log-errors logs/bible_errors.log
 ```
 
 **Set specific log level:**
 
 ```
-bygod --translations NIV --log-level DEBUG
+bygod -t NIV -ll DEBUG
 ```
 
 **Combine options:**
 
 ```
-bygod --translations NIV -v --log-errors logs/errors.log --log-level WARNING
+bygod -t NIV -v --log-errors logs/errors.log -ll WARNING
 ```
 
 ---
@@ -192,22 +192,22 @@ bygod --translations NIV -v --log-errors logs/errors.log --log-level WARNING
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--translations, -t` | Comma-separated list of Bible translations | `NIV` |
-| `--books, -b` | Comma-separated list of specific books | All books |
-| `--formats, -f` | Output formats: json, csv, xml, yaml | `json` |
-| `--output-mode` | Output mode: book, books, all | `all` |
-| `--output, -o` | Directory to save downloaded Bibles | `./bibles` |
-| `--combined, -c` | Generate combined file for multiple translations | `False` |
-| `--rate-limit` | Maximum concurrent requests | `5` |
+| `-t, --translations` | Comma-separated list of Bible translations | `NIV` |
+| `-b, --books` | Comma-separated list of specific books | All books |
+| `-f, --formats` | Output formats: json, csv, xml, yaml | `json` |
+| `-m, --mode` | Output mode: book, books, all | `all` |
+| `-o, --output` | Directory to save downloaded Bibles | `./bibles` |
+| `--combined` | Generate combined file for multiple translations | `False` |
+| `-c, --concurrency` | Maximum concurrent requests | `5` |
 | `--retries` | Maximum retry attempts | `3` |
-| `--retry-delay` | Delay between retries (seconds) | `2` |
+| `-d, --delay` | Delay between retries (seconds) | `2` |
 | `--timeout` | Request timeout (seconds) | `300` |
 | `-v, --verbose` | Increase verbosity level (-v: INFO, -vv: DEBUG, -vvv: TRACE) | `0` |
 | `-q, --quiet` | Suppress all output except errors | `False` |
-| `--log-level` | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO` |
+| `-ll, --log-level` | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO` |
 | `--log-errors` | Log errors to specified file | `None` |
-| `--dry-run` | Show what would be downloaded without downloading | `False` |
-| `--resume` | Resume interrupted downloads by skipping existing files | `False` |
+| `-dr, --dry-run` | Show what would be downloaded without downloading | `False` |
+| `-r, --resume` | Resume interrupted downloads by skipping existing files | `False` |
 | `--force` | Force re-download even if files already exist | `False` |
 
 ## 📚 Supported Translations
@@ -435,7 +435,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ### Common Issues
 
-**Rate Limiting**: If you encounter 429 errors, reduce the `--rate-limit` value.
+**Rate Limiting**: If you encounter 429 errors, reduce the `--concurrency` value.
 
 **Timeout Errors**: Increase the `--timeout` value for slower connections.
 
