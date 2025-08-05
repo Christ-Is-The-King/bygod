@@ -57,8 +57,8 @@ async def main_async():
     logger.info(f"📖 Books: {args.books if args.books else 'All books'}")
     logger.info(f"📄 Formats: {', '.join(args.formats)}")
     logger.info(f"📁 Output Directory: {args.output}")
-    logger.info(f"⚡ Concurrency: {args.rate_limit} concurrent requests")
-    logger.info(f"🔄 Retries: {args.retries} (delay: {args.retry_delay}s)")
+    logger.info(f"⚡ Concurrency: {args.concurrency} concurrent requests")
+    logger.info(f"🔄 Retries: {args.retries} (delay: {args.delay}s)")
     logger.info(f"⏱️ Timeout: {args.timeout}s")
 
     # Create output directory
@@ -86,9 +86,9 @@ async def main_async():
             translations=args.translations,
             output_dir=str(output_dir),
             formats=args.formats,
-            rate_limit=args.rate_limit,
+            rate_limit=args.concurrency,
             retries=args.retries,
-            retry_delay=args.retry_delay,
+            retry_delay=args.delay,
             timeout=args.timeout,
             logger=logger,
         )
@@ -102,44 +102,44 @@ async def main_async():
             logger.info(f"📖 Processing {translation}")
             if books_to_download:
                 # Download specific books
-                if args.output_mode in ["books", "all"]:
+                if args.mode in ["books", "all"]:
                     await process_books_parallel(
                         translation=translation,
                         books=books_to_download,
                         output_dir=str(output_dir),
                         formats=args.formats,
-                        rate_limit=args.rate_limit,
+                        rate_limit=args.concurrency,
                         retries=args.retries,
-                        retry_delay=args.retry_delay,
+                        retry_delay=args.delay,
                         timeout=args.timeout,
                         logger=logger,
                     )
-                if args.output_mode in ["book", "all"]:
+                if args.mode in ["book", "all"]:
                     # For specific books, we don't create a full Bible file
                     pass
             else:
                 # Download full Bible
-                if args.output_mode in ["book", "all"]:
+                if args.mode in ["book", "all"]:
                     await process_full_bible(
                         translation=translation,
                         output_dir=str(output_dir),
                         formats=args.formats,
-                        rate_limit=args.rate_limit,
+                        rate_limit=args.concurrency,
                         retries=args.retries,
-                        retry_delay=args.retry_delay,
+                        retry_delay=args.delay,
                         timeout=args.timeout,
                         logger=logger,
                     )
-                if args.output_mode in ["books", "all"]:
+                if args.mode in ["books", "all"]:
                     # Download individual books
                     await process_books_parallel(
                         translation=translation,
                         books=BOOKS,
                         output_dir=str(output_dir),
                         formats=args.formats,
-                        rate_limit=args.rate_limit,
+                        rate_limit=args.concurrency,
                         retries=args.retries,
-                        retry_delay=args.retry_delay,
+                        retry_delay=args.delay,
                         timeout=args.timeout,
                         logger=logger,
                     )

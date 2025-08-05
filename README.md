@@ -212,36 +212,40 @@ bygod -t NIV -v --log-errors logs/errors.log -ll WARNING
 
 ## 📚 Supported Translations
 
-The downloader supports 26 Bible translations:
+The downloader supports 32 Bible translations:
 
-- **NIV** - New International Version
-- **KJV** - King James Version
+- **AMP** - Amplified Bible
+- **ASV** - American Standard Version
+- **AKJV** - Authorized King James Version
+- **BRG** - BRG Bible
+- **CSB** - Christian Standard Bible
+- **EHV** - Evangelical Heritage Version
 - **ESV** - English Standard Version
+- **ESVUK** - English Standard Version UK
+- **GNV** - Geneva Bible
+- **GW** - God's Word Translation
+- **ISV** - International Standard Version
+- **JUB** - Jubilee Bible
+- **KJV** - King James Version
+- **KJ21** - 21st Century King James Version
+- **LEB** - Lexham English Bible
+- **LSB** - Legacy Standard Bible
+- **MEV** - Modern English Version
+- **NASB** - New American Standard Bible
+- **NASB1995** - New American Standard Bible 1995
+- **NET** - New English Translation
+- **NIV** - New International Version
+- **NIVUK** - New International Version UK
 - **NKJV** - New King James Version
 - **NLT** - New Living Translation
-- **CSB** - Christian Standard Bible
-- **NASB** - New American Standard Bible
+- **NLV** - New Life Version
+- **NMB** - New Matthew Bible (New Testament only)
+- **NOG** - Names of God Bible
+- **NRSV** - New Revised Standard Version
+- **NRSVUE** - New Revised Standard Version Updated Edition
 - **RSV** - Revised Standard Version
-- **ASV** - American Standard Version
 - **WEB** - World English Bible
 - **YLT** - Young's Literal Translation
-- **AMP** - Amplified Bible
-- **MSG** - The Message
-- **CEV** - Contemporary English Version
-- **ERV** - Easy-to-Read Version
-- **GW** - God's Word Translation
-- **HCSB** - Holman Christian Standard Bible
-- **ICB** - International Children's Bible
-- **ISV** - International Standard Version
-- **LEB** - Lexham English Bible
-- **NCV** - New Century Version
-- **NET** - New English Translation
-- **NIRV** - New International Reader's Version
-- **NRSV** - New Revised Standard Version
-- **TLB** - The Living Bible
-- **TLV** - Tree of Life Version
-- **VOICE** - The Voice
-- **WYC** - Wycliffe Bible
 
 ## 📁 Output Structure
 

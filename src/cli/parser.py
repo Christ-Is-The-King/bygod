@@ -11,7 +11,7 @@ from typing import List
 
 from ..constants.books import BOOKS
 from ..constants.cli import SUPPORTED_OUTPUT_FORMATS
-from ..constants.translations import BIBLE_TRANSLATIONS
+from ..constants.translations import SUPPORTED_BIBLE_TRANSLATIONS
 
 
 def validate_bibles(translations_str: str) -> List[str]:
@@ -30,9 +30,9 @@ def validate_bibles(translations_str: str) -> List[str]:
     translations = [t.strip().upper() for t in translations_str.split(",") if t.strip()]
 
     # Check if all translations are valid
-    invalid_translations = [t for t in translations if t not in BIBLE_TRANSLATIONS]
+    invalid_translations = [t for t in translations if t not in SUPPORTED_BIBLE_TRANSLATIONS]
     if invalid_translations:
-        valid_translations = ", ".join(sorted(BIBLE_TRANSLATIONS.keys()))
+        valid_translations = ", ".join(sorted(SUPPORTED_BIBLE_TRANSLATIONS.keys()))
         raise argparse.ArgumentTypeError(
             f"Invalid translation(s): {', '.join(invalid_translations)}. "
             f"Valid translations: {valid_translations}"
@@ -125,7 +125,7 @@ Examples:
     )
 
     # Translation selection
-    wrapped_choices = textwrap.fill(", ".join(BIBLE_TRANSLATIONS.keys()), width=80)
+    wrapped_choices = textwrap.fill(", ".join(SUPPORTED_BIBLE_TRANSLATIONS.keys()), width=80)
     parser.add_argument(
         "-t",
         "--translations",
