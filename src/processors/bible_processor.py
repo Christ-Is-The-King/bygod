@@ -9,7 +9,8 @@ import asyncio
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+import json
 
 from ..constants.books import BOOKS
 from ..constants.translations import BIBLE_TRANSLATIONS
@@ -43,23 +44,67 @@ async def process_full_bible(
     logger.info(f"Downloading full Bible for {translation}...")
 
     try:
-        # Download the full Bible
         start_time = time.time()
-        data = await download_bible_async(
-            translation=translation,
-            max_concurrent_requests=rate_limit,
-            max_retries=retries,
-            retry_delay=retry_delay,
-            timeout=timeout,
-        )
+        translation_dir = Path(output_dir) / translation
+        books_dir = translation_dir / "books"
+
+        # Try to reuse existing per-book JSON files
+        reused_count = 0
+        missing_books: List[str] = []
+        data: List[Dict[str, Any]] = []
+
+        for book in BOOKS:
+            book_json = books_dir / f"{book}.json"
+            if book_json.exists():
+                try:
+                    with open(book_json, "r", encoding="utf-8") as f:
+                        book_obj = json.load(f)
+                    # Expect structure {"metadata": ..., "books": {book: [passages...]}}
+                    passages = []
+                    books_map = book_obj.get("books", {})
+                    if book in books_map and isinstance(books_map[book], list):
+                        passages = books_map[book]
+                    if passages:
+                        data.extend(passages)
+                        reused_count += 1
+                        continue
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not reuse existing file {book_json}: {e}")
+            # If no usable file, mark missing
+            missing_books.append(book)
+
+        # Download any missing books
+        if missing_books:
+            logger.info(
+                f"📥 {len(missing_books)} books not found on disk. Downloading missing books..."
+            )
+            downloaded = await download_bible_async(
+                translation=translation,
+                books=missing_books,
+                max_concurrent_requests=rate_limit,
+                max_retries=retries,
+                retry_delay=retry_delay,
+                timeout=timeout,
+            )
+            if not downloaded:
+                logger.error(
+                    f"Failed to obtain missing books for {translation}; aborting full Bible creation"
+                )
+                return
+            data.extend(downloaded)
+
         download_time = time.time() - start_time
 
-        if not data:
-            logger.error(f"Failed to download full Bible for {translation}")
+        # Validate that all books are present in data; if any missing, abort
+        present_books = {p.get("book") for p in data if p.get("book")}
+        missing_after = [b for b in BOOKS if b not in present_books]
+        if missing_after:
+            logger.error(
+                f"❌ Missing books in assembled data: {', '.join(missing_after)}. Skipping full Bible file creation."
+            )
             return
 
-        # Create output directory
-        translation_dir = Path(output_dir) / translation
+        # Ensure output directory exists
         translation_dir.mkdir(parents=True, exist_ok=True)
 
         # Save in all requested formats
@@ -93,7 +138,7 @@ async def process_full_bible(
                 )
 
         logger.info(
-            f"Completed full Bible download for {translation} in {download_time:.2f}s"
+            f"Completed full Bible assembly for {translation} in {download_time:.2f}s (reused {reused_count} books)"
         )
 
     except Exception as e:
@@ -110,7 +155,7 @@ async def process_books_parallel(
     retry_delay: int,
     timeout: int,
     logger: logging.Logger,
-) -> None:
+) -> Dict[str, Any]:
     """
     Process multiple books in parallel for a translation.
 
@@ -126,7 +171,7 @@ async def process_books_parallel(
         logger: Logger instance
     """
     # Create tasks for all books
-    tasks = []
+    tasks: List[asyncio.Task] = []
     for book in books:
         task = process_single_book(
             translation=translation,
@@ -142,7 +187,21 @@ async def process_books_parallel(
         tasks.append(task)
 
     # Execute all tasks concurrently
-    await asyncio.gather(*tasks, return_exceptions=True)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    success_count = 0
+    failed_books: List[str] = []
+    for res in results:
+        if isinstance(res, Exception):
+            # Unknown book in this context
+            failed_books.append("<unknown>")
+            continue
+        if isinstance(res, tuple) and len(res) == 2:
+            book_name, ok = res
+            if ok:
+                success_count += 1
+            else:
+                failed_books.append(book_name)
+    return {"success_count": success_count, "failed_count": len(failed_books), "failed_books": failed_books}
 
 
 async def process_single_book(
@@ -155,7 +214,7 @@ async def process_single_book(
     retry_delay: int,
     timeout: int,
     logger: logging.Logger,
-) -> None:
+) -> Tuple[str, bool]:
     """
     Process a single book download for a translation.
 
@@ -185,14 +244,15 @@ async def process_single_book(
 
         if not data:
             logger.error(f"Failed to download {book} ({translation})")
-            return
+            return (book, False)
 
         # Create output directory structure
         translation_dir = Path(output_dir) / translation
         books_dir = translation_dir / "books"
         books_dir.mkdir(parents=True, exist_ok=True)
 
-        # Save in all requested formats
+        # Save in all requested formats; success if at least one saves
+        saved_any = False
         for fmt in formats:
             try:
                 if fmt == "json":
@@ -216,13 +276,15 @@ async def process_single_book(
                 logger.debug(
                     f"Saved {book} ({translation}) in {fmt} format: {output_file}"
                 )
+                saved_any = True
 
             except Exception as e:
                 logger.error(
                     f"Error saving {book} ({translation}) in {fmt} format: {e}"
                 )
 
-        pass
+        return (book, saved_any)
 
     except Exception as e:
         logger.error(f"Error processing {book} ({translation}): {e}")
+        return (book, False)

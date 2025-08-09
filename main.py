@@ -103,7 +103,7 @@ async def main_async():
             if books_to_download:
                 # Download specific books
                 if args.mode in ["books", "all"]:
-                    await process_books_parallel(
+                    result = await process_books_parallel(
                         translation=translation,
                         books=books_to_download,
                         output_dir=str(output_dir),
@@ -114,6 +114,10 @@ async def main_async():
                         timeout=args.timeout,
                         logger=logger,
                     )
+                    if result and isinstance(result, dict):
+                        logger.info(
+                            f"📦 Summary for {translation}: {result.get('success_count', 0)} books saved, {result.get('failed_count', 0)} failed"
+                        )
                 if args.mode in ["book", "all"]:
                     # For specific books, we don't create a full Bible file
                     pass
@@ -148,12 +152,20 @@ async def main_async():
             failed_translations.append(translation)
     # Log completion summary
     total_time = time.time() - start_time
-    successful_translations = [
-        t for t in args.translations if t not in failed_translations
-    ]
-    logger.info(
-        f"⏱️ Total Time: {format_duration(total_time)}, Successful: {', '.join(successful_translations)}, Failed: {len(failed_translations)} translations"
-    )
+    if books_to_download:
+        # For targeted books, summarize by book counts across translations
+        # Note: per-translation book counts are logged above; here we show translation success/failure
+        successful_translations = [t for t in args.translations if t not in failed_translations]
+        logger.info(
+            f"⏱️ Total Time: {format_duration(total_time)}, Successful translations: {len(successful_translations)}, Failed translations: {len(failed_translations)}"
+        )
+    else:
+        successful_translations = [
+            t for t in args.translations if t not in failed_translations
+        ]
+        logger.info(
+            f"⏱️ Total Time: {format_duration(total_time)}, Successful translations: {len(successful_translations)}, Failed translations: {len(failed_translations)}"
+        )
     return 0 if not failed_translations else 1
 
 

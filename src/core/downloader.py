@@ -35,6 +35,11 @@ from ..constants.cli import (
 from ..constants.translations import BIBLE_TRANSLATIONS
 from ..utils.formatting import format_duration, format_number_with_commas
 
+# Mapping of our canonical book names to BibleGateway/meaningless expected names
+BOOK_NAME_GATEWAY_ALIASES: Dict[str, str] = {
+    "Song of Songs": "Song of Solomon",
+}
+
 
 class AsyncBibleDownloader:
     """
@@ -84,12 +89,18 @@ class AsyncBibleDownloader:
 
         # Set up logging - use the main logger to ensure consistent verbosity
         self.logger = logging.getLogger("bible_downloader")
+        # Track last failed books (for full-Bible runs)
+        self._last_failed_books: List[str] = []
 
         # Store original get_page function for restoration
         self._original_get_page = get_page
 
         # Monkey patch get_page to use our async session
         self._setup_monkey_patch()
+
+    @property
+    def last_failed_books(self) -> List[str]:
+        return self._last_failed_books
 
     def _setup_monkey_patch(self):
         """Set up monkey patching of meaningless library's get_page function."""
@@ -333,6 +344,18 @@ class AsyncBibleDownloader:
 
         return None
 
+    def _gateway_book_name(self, book: str) -> str:
+        """Return the book name expected by BibleGateway/meaningless for a given canonical name."""
+        return BOOK_NAME_GATEWAY_ALIASES.get(book, book)
+
+    def _candidate_book_names(self, book: str) -> List[str]:
+        """Return ordered candidate names to try for a given book (canonical then alias)."""
+        names: List[str] = [book]
+        alias = BOOK_NAME_GATEWAY_ALIASES.get(book)
+        if alias and alias not in names:
+            names.append(alias)
+        return names
+
     async def _discover_chapter_count(self, book: str) -> int:
         """
         Discover the number of chapters in a book.
@@ -354,8 +377,12 @@ class AsyncBibleDownloader:
         self.logger.warning(
             f"⚠️ Book '{book}' not in known chapter list, attempting HTTP discovery..."
         )
-        url = PASSAGE_URL_TEMPLATE.format(quote(f"{book} 1"), self.translation)
-        content = await self._make_request(url)
+        content = None
+        for candidate in self._candidate_book_names(book):
+            url = PASSAGE_URL_TEMPLATE.format(quote(f"{candidate} 1"), self.translation)
+            content = await self._make_request(url)
+            if content:
+                break
 
         if not content:
             return 1  # Fallback to single chapter
@@ -439,11 +466,6 @@ class AsyncBibleDownloader:
             # Log chapter start
             self.logger.info(f"📖 Starting {book} {chapter} ({self.translation})")
 
-            # Create a temporary directory for this download
-            temp_dir = tempfile.mkdtemp(
-                prefix=f"bible_download_{self.translation}_{book}_{chapter}_"
-            )
-
             # Use JSONDownloader directly - it handles all parsing through meaningless library
             downloader = JSONDownloader(
                 translation=self.translation,
@@ -451,46 +473,95 @@ class AsyncBibleDownloader:
                 strip_excess_whitespace=True,
             )
 
-            # Set the downloader to use our temporary directory
-            downloader.default_directory = temp_dir
-
-            # Get the chapter using meaningless library
-            # The JSONDownloader will use our monkey-patched get_page function
-            # Run the synchronous download_chapter in a thread pool to avoid blocking
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None, downloader.download_chapter, book, chapter
-            )
 
-            if result != 1:  # JSONDownloader returns 1 on success
-                self.logger.warning(
-                    f"Failed to download {book} {chapter} ({self.translation})"
+            verses: List[str] = []
+            selected_key = None
+
+            # Try canonical name first, then alias if needed
+            for candidate in self._candidate_book_names(book):
+                # Create a temporary directory for this attempt
+                temp_dir = tempfile.mkdtemp(
+                    prefix=f"bible_download_{self.translation}_{candidate}_{chapter}_"
                 )
-                return None
+                downloader.default_directory = temp_dir
 
-            # Read the downloaded JSON file
-            json_file = os.path.join(temp_dir, f"{book}.json")
-            if not os.path.exists(json_file):
-                self.logger.warning(
-                    f"⚠️ JSON file not found for {book} {chapter} ({self.translation})"
+                # Run the synchronous download_chapter in a thread pool to avoid blocking
+                result = await loop.run_in_executor(
+                    None, downloader.download_chapter, candidate, chapter
                 )
-                return None
 
-            with open(json_file, "r", encoding="utf-8") as f:
-                book_data = json.load(f)
+                if result != 1:
+                    # Cleanup this attempt and try next candidate
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except Exception:
+                        pass
+                    temp_dir = None
+                    continue
 
-            # Extract verses for the specific chapter from the JSONDownloader format
-            # Format: {"Genesis": {"50": {"1": "verse text", "2": "verse text", ...}}}
-            verses = []
-            if book in book_data:
-                book_chapters = book_data[book]
-                if str(chapter) in book_chapters:
-                    chapter_verses = book_chapters[str(chapter)]
-                    # Convert from dict format to list format
-                    for verse_num in sorted(chapter_verses.keys(), key=int):
-                        verse_text = chapter_verses[verse_num]
-                        if verse_text:
-                            verses.append(verse_text)
+                # Read the downloaded JSON file (named after the candidate)
+                json_file = os.path.join(temp_dir, f"{candidate}.json")
+                if not os.path.exists(json_file):
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except Exception:
+                        pass
+                    temp_dir = None
+                    continue
+
+                with open(json_file, "r", encoding="utf-8") as f:
+                    book_data = json.load(f)
+
+                # Resolve book key robustly: try canonical, candidate, then fuzzy match, then first key
+                def _norm(s: str) -> str:
+                    return "".join(ch.lower() for ch in s if ch.isalnum())
+
+                selected_key = None
+                if isinstance(book_data, dict):
+                    keys = list(book_data.keys())
+                    norm_to_key = {_norm(k): k for k in keys}
+                    for target in [book, candidate]:
+                        nk = _norm(target)
+                        if nk in norm_to_key:
+                            selected_key = norm_to_key[nk]
+                            break
+                    if selected_key is None and keys:
+                        selected_key = keys[0]
+
+                verses = []
+                if selected_key is not None and isinstance(book_data[selected_key], dict):
+                    book_chapters = book_data[selected_key]
+                    # Normalize chapter keys to ints for comparison
+                    int_key_map = {}
+                    for k, v in book_chapters.items():
+                        try:
+                            int_key_map[int(k)] = v
+                        except Exception:
+                            continue
+                    if chapter in int_key_map:
+                        chapter_verses = int_key_map[chapter]
+                        # chapter_verses keys may be strings or ints; sort as ints
+                        sorted_keys = []
+                        for vk in chapter_verses.keys():
+                            try:
+                                sorted_keys.append(int(vk))
+                            except Exception:
+                                pass
+                        for verse_num in sorted(sorted_keys):
+                            verse_text = chapter_verses[str(verse_num)] if str(verse_num) in chapter_verses else chapter_verses.get(verse_num)
+                            if verse_text:
+                                verses.append(verse_text)
+
+                if verses:
+                    break
+                else:
+                    # Cleanup and try next candidate
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except Exception:
+                        pass
+                    temp_dir = None
 
             if not verses:
                 self.logger.warning(
@@ -500,7 +571,6 @@ class AsyncBibleDownloader:
 
             end_time = time.time()
             duration = end_time - chapter_start_time
-            # Log chapter completion
             self.logger.info(
                 f"✅ Downloaded {book} {chapter} ({self.translation}): "
                 f"{format_number_with_commas(len(verses))} verses"
@@ -613,6 +683,7 @@ class AsyncBibleDownloader:
         all_chapters = []
         successful_books = 0
         failed_books = 0
+        failed_book_names: List[str] = []
 
         for i, result in enumerate(results):
             book = BOOKS[i]
@@ -621,6 +692,7 @@ class AsyncBibleDownloader:
                     f"❌ Error downloading {book} ({self.translation}): {result}"
                 )
                 failed_books += 1
+                failed_book_names.append(book)
             elif result:
                 all_chapters.extend(result)
                 successful_books += 1
@@ -634,6 +706,7 @@ class AsyncBibleDownloader:
                     f"❌ Failed to download {book} ({self.translation})"
                 )
                 failed_books += 1
+                failed_book_names.append(book)
 
         total_verses = sum(len(chapter["verses"]) for chapter in all_chapters)
         self.logger.info(f"📊 Full Bible download complete for {self.translation}")
@@ -643,6 +716,11 @@ class AsyncBibleDownloader:
 
         if failed_books > 0:
             self.logger.warning(f"⚠️ {failed_books} books failed to download")
+            self.logger.warning(
+                f"⚠️ Failed books: {', '.join(failed_book_names)}"
+            )
+        # Record failures for the caller to decide whether to save
+        self._last_failed_books = failed_book_names
 
         return all_chapters
 
@@ -692,7 +770,14 @@ async def download_bible_async(
             return await downloader.download_book(books[0])
         elif len(books) == len(BOOKS):
             # Full Bible download
-            return await downloader.download_full_bible()
+            result = await downloader.download_full_bible()
+            # If any book failed, signal failure upstream by returning empty
+            if downloader.last_failed_books:
+                logging.getLogger("download_bible_async").error(
+                    f"❌ Full Bible download had failures: {', '.join(downloader.last_failed_books)}. Skipping file creation."
+                )
+                return []
+            return result
         else:
             # Multiple books download
             tasks = [downloader.download_book(book) for book in books]
