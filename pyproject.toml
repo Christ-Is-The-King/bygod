@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bygod"
-version = "3.0.5"
+version = "3.0.6"
 description = "A comprehensive, truly asynchronous tool for downloading Bible translations from BibleGateway.com"
 readme = "README.md"
 license = {text = "MIT"}
