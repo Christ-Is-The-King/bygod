@@ -100,30 +100,29 @@ async def main_async():
     for translation in args.translations:
         try:
             logger.info(f"📖 Processing {translation}")
+            translation_dir = output_dir / translation
+            books_dir = translation_dir / "books"
+
             if books_to_download:
-                # Download specific books
-                if args.mode in ["books", "all"]:
-                    result = await process_books_parallel(
-                        translation=translation,
-                        books=books_to_download,
-                        output_dir=str(output_dir),
-                        formats=args.formats,
-                        rate_limit=args.concurrency,
-                        retries=args.retries,
-                        retry_delay=args.delay,
-                        timeout=args.timeout,
-                        logger=logger,
+                # Download only selected books
+                result = await process_books_parallel(
+                    translation=translation,
+                    books=books_to_download,
+                    output_dir=str(output_dir),
+                    formats=args.formats,
+                    rate_limit=args.concurrency,
+                    retries=args.retries,
+                    retry_delay=args.delay,
+                    timeout=args.timeout,
+                    logger=logger,
+                )
+                if result and isinstance(result, dict):
+                    logger.info(
+                        f"📦 Summary for {translation}: {result.get('success_count', 0)} books saved, {result.get('failed_count', 0)} failed"
                     )
-                    if result and isinstance(result, dict):
-                        logger.info(
-                            f"📦 Summary for {translation}: {result.get('success_count', 0)} books saved, {result.get('failed_count', 0)} failed"
-                        )
-                if args.mode in ["book", "all"]:
-                    # For specific books, we don't create a full Bible file
-                    pass
-            else:
-                # Download full Bible
-                if args.mode in ["book", "all"]:
+                # Intelligent assemble: create full Bible only if all books are present on disk
+                all_exist = all((books_dir / f"{book}.json").exists() for book in BOOKS)
+                if all_exist:
                     await process_full_bible(
                         translation=translation,
                         output_dir=str(output_dir),
@@ -134,38 +133,45 @@ async def main_async():
                         timeout=args.timeout,
                         logger=logger,
                     )
-                if args.mode in ["books", "all"]:
-                    # Download individual books
-                    await process_books_parallel(
-                        translation=translation,
-                        books=BOOKS,
-                        output_dir=str(output_dir),
-                        formats=args.formats,
-                        rate_limit=args.concurrency,
-                        retries=args.retries,
-                        retry_delay=args.delay,
-                        timeout=args.timeout,
-                        logger=logger,
+            else:
+                # No specific books requested: download all books, then assemble full Bible
+                result = await process_books_parallel(
+                    translation=translation,
+                    books=BOOKS,
+                    output_dir=str(output_dir),
+                    formats=args.formats,
+                    rate_limit=args.concurrency,
+                    retries=args.retries,
+                    retry_delay=args.delay,
+                    timeout=args.timeout,
+                    logger=logger,
+                )
+                if result and isinstance(result, dict):
+                    logger.info(
+                        f"📦 Summary for {translation}: {result.get('success_count', 0)} books saved, {result.get('failed_count', 0)} failed"
                     )
+                # After downloading all books, assemble the full Bible from existing files
+                await process_full_bible(
+                    translation=translation,
+                    output_dir=str(output_dir),
+                    formats=args.formats,
+                    rate_limit=args.concurrency,
+                    retries=args.retries,
+                    retry_delay=args.delay,
+                    timeout=args.timeout,
+                    logger=logger,
+                )
         except Exception as e:
             logger.error(f"❌ Error processing {translation}: {e}")
             failed_translations.append(translation)
     # Log completion summary
     total_time = time.time() - start_time
-    if books_to_download:
-        # For targeted books, summarize by book counts across translations
-        # Note: per-translation book counts are logged above; here we show translation success/failure
-        successful_translations = [t for t in args.translations if t not in failed_translations]
-        logger.info(
-            f"⏱️ Total Time: {format_duration(total_time)}, Successful translations: {len(successful_translations)}, Failed translations: {len(failed_translations)}"
-        )
-    else:
-        successful_translations = [
-            t for t in args.translations if t not in failed_translations
-        ]
-        logger.info(
-            f"⏱️ Total Time: {format_duration(total_time)}, Successful translations: {len(successful_translations)}, Failed translations: {len(failed_translations)}"
-        )
+    successful_translations = [
+        t for t in args.translations if t not in failed_translations
+    ]
+    logger.info(
+        f"⏱️ Total Time: {format_duration(total_time)}, Successful translations: {len(successful_translations)}, Failed translations: {len(failed_translations)}"
+    )
     return 0 if not failed_translations else 1
 
 

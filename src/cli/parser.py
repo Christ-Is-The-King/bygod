@@ -68,27 +68,6 @@ def validate_format(formats_str: str) -> List[str]:
     return formats
 
 
-def validate_output_mode(mode: str) -> str:
-    """
-    Validate output mode.
-
-    Args:
-        mode: Output mode string
-
-    Returns:
-        Validated output mode
-
-    Raises:
-        argparse.ArgumentTypeError: If mode is invalid
-    """
-    valid_modes = ["book", "books", "all"]
-    if mode.lower() not in valid_modes:
-        raise argparse.ArgumentTypeError(
-            f"Invalid output mode: {mode}. Valid modes: {', '.join(valid_modes)}"
-        )
-    return mode.lower()
-
-
 def parse_args():
     """
     Parse command-line arguments for ByGoD.
@@ -118,9 +97,6 @@ Examples:
 
   # Download with custom concurrency and retry settings
   python main.py -t NIV -c 3 --retries 5 --timeout 60
-
-  # Download with specific output mode
-  python main.py -t NIV -m books
         """,
     )
 
@@ -136,12 +112,17 @@ Examples:
     )
 
     # Book selection
+    wrapped_books = textwrap.fill(", ".join(BOOKS), width=80)
     parser.add_argument(
         "-b",
         "--books",
         type=str,
-        help="Comma-separated list of specific books to download "
-        "(e.g., 'Genesis,Psalms,Matthew'). If not specified, downloads all books.",
+        help=(
+            "Comma-separated list of specific books to download (exact names).\n"
+            "Examples: 'Genesis,Psalms,Matthew' or 'Song of Songs,1 Samuel'.\n"
+            "If not specified, downloads all books.\n"
+            f"Available books:\n{wrapped_books}"
+        ),
     )
 
     # Output formats
@@ -152,18 +133,6 @@ Examples:
         default=["json"],
         help=f"Choose 1 or more formats (using comma separated values)\n"
         f"{', '.join(SUPPORTED_OUTPUT_FORMATS).upper()}",
-    )
-
-    # Output mode
-    parser.add_argument(
-        "-m",
-        "--mode",
-        type=validate_output_mode,
-        default="all",
-        choices=["book", "books", "all"],
-        help="Output mode: 'book' for full Bible in a single file only, "
-        "'books' for individual book files only, or 'all' for both "
-        "individual book files and full Bible in a single file (default: all)",
     )
 
     # Output directory
