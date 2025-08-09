@@ -151,7 +151,7 @@ class TestBooks:
             "Psalms",
             "Proverbs",
             "Ecclesiastes",
-            "Song of Solomon",
+            "Song of Songs",
             "Isaiah",
             "Jeremiah",
             "Lamentations",
@@ -245,7 +245,7 @@ class TestBooks:
     def test_specific_book_names(self):
         """Test specific book names that might have variations."""
         # Check for correct naming of books that might have variations
-        assert "Song of Solomon" in BOOKS  # Not "Song of Songs"
+        assert "Song of Songs" in BOOKS  # Not "Song of Solomon"
         assert "1 Samuel" in BOOKS  # Not "First Samuel"
         assert "2 Samuel" in BOOKS  # Not "Second Samuel"
         assert "1 John" in BOOKS  # Not "First John"
