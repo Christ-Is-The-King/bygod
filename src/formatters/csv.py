@@ -72,7 +72,7 @@ def format_as_csv(data: List[Dict[str, Any]], translation: str) -> str:
                 timestamp = datetime.now(timezone.utc).strftime(
                     "%Y-%m-%dT%H:%M:%S.%f+00:00"
                 )
-                bygod_version = "3.0.6"
+                bygod_version = "3.1.0"
                 first_row = False
             else:
                 copyright_url = ""
@@ -152,7 +152,7 @@ def format_master_csv(data: List[Dict[str, Any]], translation: str) -> str:
                 timestamp = datetime.now(timezone.utc).strftime(
                     "%Y-%m-%dT%H:%M:%S.%f+00:00"
                 )
-                bygod_version = "3.0.6"
+                bygod_version = "3.1.0"
                 first_row = False
             else:
                 copyright_url = ""

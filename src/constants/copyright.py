@@ -34,38 +34,33 @@ COPYRIGHT_URLS = {
     "VOICE": "https://www.biblegateway.com/versions/The-Voice-VOICE/",
     "WEB": "https://www.biblegateway.com/versions/World-English-Bible-WEB/",
     "YLT": "https://www.biblegateway.com/versions/Youngs-Literal-Translation-YLT/",
-    
     # Spanish Translations
     "LBLA": "https://www.biblegateway.com/versions/La-Biblia-de-las-Amricas-LBLA/",
     "NVI": "https://www.biblegateway.com/versions/Nueva-Version-Internacional-NVI/",
     "DHH": "https://www.biblegateway.com/versions/Dios-Habla-Hoy-DHH/",
     "RVR1960": "https://www.biblegateway.com/versions/Reina-Valera-1960-RVR1960/",
-    
     # French Translations
     "LSG": "https://www.biblegateway.com/versions/Louis-Segond-LSG/",
     "BDS": "https://www.biblegateway.com/versions/La-Bible-du-Semeur-BDS/",
-    
     # German Translations
     "HOF": "https://www.biblegateway.com/versions/Hoffnung-fur-Alle-HOF/",
     "LUTH1545": "https://www.biblegateway.com/versions/Luther-Bibel-1545-LUTH1545/",
-    
     # Other Languages
     "B21": "https://www.biblegateway.com/versions/Bible-21-B21/",
     "BB": "https://www.biblegateway.com/versions/BasisBijbel-BB/",
     "HTB": "https://www.biblegateway.com/versions/Het-Boek-HTB/",
-    
     # Fallback for unknown translations
-    "DEFAULT": "https://www.biblegateway.com/versions/"
+    "DEFAULT": "https://www.biblegateway.com/versions/",
 }
 
 
 def get_copyright_url(translation_code: str) -> str:
     """
     Get the copyright URL for a given translation code.
-    
+
     Args:
         translation_code: The translation code (e.g., 'ESV', 'NIV')
-        
+
     Returns:
         The copyright URL for the translation, or the default URL if not found
     """
@@ -75,7 +70,7 @@ def get_copyright_url(translation_code: str) -> str:
 def get_all_copyright_urls() -> dict:
     """
     Get all available copyright URLs.
-    
+
     Returns:
         Dictionary mapping translation codes to copyright URLs
     """

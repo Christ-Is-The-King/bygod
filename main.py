@@ -17,7 +17,7 @@ This module provides:
 
 Author: ByGoD Team
 License: MIT
-Version: 3.0.6 - CLI Improvements Edition
+Version: 3.1.0 - CLI Improvements Edition
 """
 
 import asyncio

@@ -60,7 +60,7 @@ def format_as_xml(data: List[Dict[str, Any]], translation: str) -> str:
     xml_parts.append(f"    <copyright>{copyright_url}</copyright>")
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
     xml_parts.append(f"    <timestamp>{timestamp}</timestamp>")
-    xml_parts.append("    <meaningless>3.0.6</meaningless>")
+    xml_parts.append("    <meaningless>3.1.0</meaningless>")
     xml_parts.append("  </meta>")
 
     # Add main structure: language name="abbr" -> translation name="abbr" -> book -> chapter -> passage
@@ -142,7 +142,7 @@ def format_master_xml(data: List[Dict[str, Any]], translation: str) -> str:
     xml_parts.append(f"    <copyright>{copyright_url}</copyright>")
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
     xml_parts.append(f"    <timestamp>{timestamp}</timestamp>")
-    xml_parts.append("    <meaningless>3.0.6</meaningless>")
+    xml_parts.append("    <meaningless>3.1.0</meaningless>")
     xml_parts.append("  </meta>")
 
     # Add main structure: language name="abbr" -> translation name="abbr" -> book -> chapter -> passage
