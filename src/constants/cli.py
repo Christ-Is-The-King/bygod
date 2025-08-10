@@ -28,7 +28,7 @@ DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_DELAY = 2
 
 # Default concurrency settings
-DEFAULT_MAX_CONCURRENT_REQUESTS = 5
+DEFAULT_MAX_CONCURRENT_REQUESTS = 10
 
 # Rate limiting settings
 RATE_LIMIT_DELAY = 1.0  # Delay between requests in seconds

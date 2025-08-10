@@ -21,7 +21,7 @@ class TestAsyncBibleDownloader:
         """Test initialization with valid translation."""
         downloader = AsyncBibleDownloader("NIV")
         assert downloader.translation == "NIV"
-        assert downloader.max_concurrent_requests == 5
+        assert downloader.max_concurrent_requests == 10
         assert downloader.max_retries == 3
         assert downloader.retry_delay == 2
         assert downloader.timeout == 300
@@ -171,6 +171,9 @@ class TestDownloadBibleAsync:
             mock_downloader.download_full_bible.return_value = [
                 {"book": "Genesis", "chapter": "1", "verses": ["In the beginning..."]}
             ]
+            
+            # Mock the last_failed_books property to return empty list (no failures)
+            mock_downloader.last_failed_books = []
 
             result = await download_bible_async("NIV", books=BOOKS)
 

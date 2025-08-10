@@ -157,8 +157,8 @@ Examples:
         "-c",
         "--concurrency",
         type=int,
-        default=5,
-        help="Maximum concurrent requests to BibleGateway (default: 5)",
+        default=10,
+        help="Maximum concurrent requests to BibleGateway (default: 10)",
     )
 
     parser.add_argument(

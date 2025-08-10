@@ -17,7 +17,7 @@ This module provides:
 
 Author: ByGoD Team
 License: MIT
-Version: 3.0.2 - CLI Improvements Edition
+Version: 3.0.6 - CLI Improvements Edition
 """
 
 import asyncio
@@ -31,8 +31,9 @@ from typing import List
 # Import modular components
 from src.cli.parser import parse_args
 from src.constants.books import BOOKS
-from src.processors.bible_processor import process_books_parallel, process_full_bible
-from src.processors.master_processor import process_master_file
+from src.processors.books import books_processor
+from src.processors.bible import bible_processor
+from src.processors.translations import translations_combine_processor
 from src.utils.formatting import format_duration
 from src.utils.logging import setup_logging
 
@@ -82,11 +83,11 @@ async def main_async():
             logger.error("Combined file requires at least 2 translations")
             return 1
         logger.info("🔄 Processing combined file...")
-        await process_master_file(
+        await translations_combine_processor(
             translations=args.translations,
             output_dir=str(output_dir),
             formats=args.formats,
-            rate_limit=args.concurrency,
+            max_concurrent_requests=args.concurrency,
             retries=args.retries,
             retry_delay=args.delay,
             timeout=args.timeout,
@@ -105,12 +106,12 @@ async def main_async():
 
             if books_to_download:
                 # Download only selected books
-                result = await process_books_parallel(
+                result = await books_processor(
                     translation=translation,
                     books=books_to_download,
                     output_dir=str(output_dir),
                     formats=args.formats,
-                    rate_limit=args.concurrency,
+                    max_concurrent_requests=args.concurrency,
                     retries=args.retries,
                     retry_delay=args.delay,
                     timeout=args.timeout,
@@ -123,11 +124,11 @@ async def main_async():
                 # Intelligent assemble: create full Bible only if all books are present on disk
                 all_exist = all((books_dir / f"{book}.json").exists() for book in BOOKS)
                 if all_exist:
-                    await process_full_bible(
+                    await bible_processor(
                         translation=translation,
                         output_dir=str(output_dir),
                         formats=args.formats,
-                        rate_limit=args.concurrency,
+                        max_concurrent_requests=args.concurrency,
                         retries=args.retries,
                         retry_delay=args.delay,
                         timeout=args.timeout,
@@ -135,12 +136,12 @@ async def main_async():
                     )
             else:
                 # No specific books requested: download all books, then assemble full Bible
-                result = await process_books_parallel(
+                result = await books_processor(
                     translation=translation,
                     books=BOOKS,
                     output_dir=str(output_dir),
                     formats=args.formats,
-                    rate_limit=args.concurrency,
+                    max_concurrent_requests=args.concurrency,
                     retries=args.retries,
                     retry_delay=args.delay,
                     timeout=args.timeout,
@@ -151,11 +152,11 @@ async def main_async():
                         f"📦 Summary for {translation}: {result.get('success_count', 0)} books saved, {result.get('failed_count', 0)} failed"
                     )
                 # After downloading all books, assemble the full Bible from existing files
-                await process_full_bible(
+                await bible_processor(
                     translation=translation,
                     output_dir=str(output_dir),
                     formats=args.formats,
-                    rate_limit=args.concurrency,
+                    max_concurrent_requests=args.concurrency,
                     retries=args.retries,
                     retry_delay=args.delay,
                     timeout=args.timeout,

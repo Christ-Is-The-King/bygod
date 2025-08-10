@@ -7,7 +7,8 @@ A comprehensive, truly asynchronous tool for downloading Bible translations from
 - **True Async HTTP Requests**: Uses `aiohttp` for genuine parallelism, not just threading
 - **Direct HTML Parsing**: Bypasses synchronous libraries to directly parse BibleGateway HTML
 - **Multiple Translations**: Support for 30+ Bible translations (NIV, KJV, ESV, etc.)
-- **Multiple Formats**: Output in JSON, CSV, YAML, and XML formats
+- **Multiple Formats**: Output in JSON, CSV, YAML, and XML formats with consistent structure
+- **Format Consistency**: Unified hierarchical organization across all output formats
 - **Intelligent Rate Limiting**: Configurable concurrency with automatic rate limiting
 - **Retry Mechanisms**: Exponential backoff with configurable retry attempts
 - **Organized Output**: Structured directory organization by translation and format
@@ -249,7 +250,45 @@ The downloader supports 32 Bible translations:
 
 ## 📁 Output Structure
 
-The downloader creates a well-organized directory structure:
+The downloader creates a well-organized directory structure with consistent formatting across all output formats:
+
+### Format Consistency
+
+All output formats (JSON, YAML, XML, CSV) maintain consistent structure and metadata:
+
+- **Hierarchical Organization**: `language_abbr -> translation_abbr -> book -> chapter -> verse`
+- **Language Abbreviations**: 2-character language codes (e.g., "EN" for English, "SP" for Spanish)
+- **Metadata Section**: Includes copyright, language, ByGod version, timestamp, and translation info
+- **Unified Structure**: Same data organization regardless of output format
+
+### Example Output Structure
+
+```json
+{
+  "EN": {
+    "ESV": {
+      "Genesis": {
+        "1": {
+          "1": "In the beginning, God created the heavens and the earth.",
+          "2": "The earth was without form and void...",
+          // ... more verses
+        }
+      }
+    }
+  },
+  "meta": {
+    "Copyright": "https://www.biblegateway.com/versions/esv-bible/#copy",
+    "Language": "English",
+    "ByGod": "3.0.6",
+    "Timestamp": "2025-01-XXTXX:XX:XX.XXXXXX+00:00",
+    "Translation": "ESV"
+  }
+}
+```
+
+The same hierarchical structure is maintained in YAML, XML, and CSV formats, ensuring data consistency across all outputs.
+
+### Directory Organization
 
 ```
 bibles/
@@ -294,8 +333,8 @@ bible-gateway-downloader/
 │   ├── cli/                   # Command line interface
 │   │   └── parser.py          # Argument parsing and validation
 │   ├── processors/            # Processing logic
-│   │   ├── bible_processor.py # Bible download processing
-│   │   └── master_processor.py # Master file processing
+│   │   ├── bible.py # Bible download processing
+│   │   └── translations.py # Master file processing
 │   ├── formatters/            # Output format handlers
 │   │   ├── json.py           # JSON formatting
 │   │   ├── csv.py            # CSV formatting

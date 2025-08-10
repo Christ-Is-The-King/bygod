@@ -1,8 +1,8 @@
 """
-CSV formatters for ByGoD.
+CSV formatter for Bible data.
 
 This module contains functions for formatting Bible data into CSV format
-with metadata headers and structured data.
+with metadata and structured organization.
 """
 
 import csv
@@ -10,96 +10,166 @@ import io
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from ..constants.books import BOOKS
 from ..constants.translations import BIBLE_TRANSLATIONS
+from ..constants.copyright import get_copyright_url
 
 
-def format_as_csv(data: List[Dict[str, Any]], translation: str = "NIV") -> str:
+def format_as_csv(data: List[Dict[str, Any]], translation: str) -> str:
     """
-    Format Bible data as CSV with metadata header.
+    Format Bible data as CSV.
 
     Args:
-        data: List of Bible passage dictionaries
-        translation: Bible translation code (e.g., "NIV")
+        data: List of Bible passages
+        translation: Translation abbreviation (e.g., 'ESV', 'NIV')
 
     Returns:
         Formatted CSV string
     """
     if not data:
-        return "error,No data to format\n"
+        return "Book,Chapter,Passage,Language,Translation,Copyright,Timestamp,ByGod\n"
 
     # Get translation info
     translation_info = BIBLE_TRANSLATIONS.get(
         translation, {"name": translation, "language": "Unknown"}
     )
 
-    # Create output buffer
+    # Get language abbreviation (first 2 letters of language name)
+    language = translation_info["language"]
+    language_abbr = language[:2].upper() if len(language) >= 2 else language.upper()
+
+    # Create CSV structure
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Write metadata as comments
-    writer.writerow([f"# Translation: {translation} ({translation_info['name']})"])
-    writer.writerow([f"# Language: {translation_info['language']}"])
-    writer.writerow([f"# Generated: {datetime.now(timezone.utc).isoformat()}"])
-    writer.writerow([f"# Total Passages: {len(data)}"])
-    writer.writerow([f"# Format: CSV"])
-    writer.writerow([])  # Empty row for separation
+    # Add headers
+    writer.writerow(
+        [
+            "Book",
+            "Chapter",
+            "Passage",
+            "Language",
+            "Translation",
+            "Copyright",
+            "Timestamp",
+            "ByGod",
+        ]
+    )
 
-    # Write headers
-    if data:
-        headers = ["book", "chapter", "verse", "text", "translation"]
-        writer.writerow(headers)
+    # Add data rows
+    first_row = True
+    for passage in data:
+        book = passage.get("book", "Unknown")
+        chapter = passage.get("chapter", "1")
+        verses = passage.get("verses", [])
 
-        # Write data
-        for passage in data:
-            row = [
-                passage.get("book", ""),
-                passage.get("chapter", ""),
-                passage.get("verse", ""),
-                passage.get("text", ""),
-                translation,
-            ]
-            writer.writerow(row)
+        for i, verse_text in enumerate(verses):
+            passage_num = i + 1
+
+            # First row gets metadata values, others get empty values
+            if first_row:
+                copyright_url = get_copyright_url(translation)
+                timestamp = datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%dT%H:%M:%S.%f+00:00"
+                )
+                bygod_version = "3.0.6"
+                first_row = False
+            else:
+                copyright_url = ""
+                timestamp = ""
+                bygod_version = ""
+
+            writer.writerow(
+                [
+                    book,
+                    chapter,
+                    passage_num,
+                    language_abbr,
+                    translation,
+                    copyright_url,
+                    timestamp,
+                    bygod_version,
+                ]
+            )
 
     return output.getvalue()
 
 
-def format_master_csv(all_data: Dict[str, List[Dict[str, Any]]]) -> str:
+def format_master_csv(data: List[Dict[str, Any]], translation: str) -> str:
     """
-    Format multiple translations as a single CSV file.
+    Format master Bible data as CSV.
 
     Args:
-        all_data: Dictionary with translation codes as keys and Bible data as values
+        data: List of Bible passages
+        translation: Translation abbreviation (e.g., 'ESV', 'NIV')
 
     Returns:
         Formatted CSV string
     """
-    if not all_data:
-        return "error,No data to format\n"
+    if not data:
+        return "Book,Chapter,Passage,Language,Translation,Copyright,Timestamp,ByGod\n"
 
-    # Create output buffer
+    # Get translation info
+    translation_info = BIBLE_TRANSLATIONS.get(
+        translation, {"name": translation, "language": "Unknown"}
+    )
+
+    # Get language abbreviation (first 2 letters of language name)
+    language = translation_info["language"]
+    language_abbr = language[:2].upper() if len(language) >= 2 else language.upper()
+
+    # Create CSV structure
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Write metadata as comments
-    writer.writerow([f"# Generated: {datetime.now(timezone.utc).isoformat()}"])
-    writer.writerow([f"# Total Translations: {len(all_data)}"])
-    writer.writerow([f"# Format: CSV"])
-    writer.writerow([])  # Empty row for separation
+    # Add headers
+    writer.writerow(
+        [
+            "Book",
+            "Chapter",
+            "Passage",
+            "Language",
+            "Translation",
+            "Copyright",
+            "Timestamp",
+            "ByGod",
+        ]
+    )
 
-    # Write headers
-    headers = ["translation", "book", "chapter", "verse", "text"]
-    writer.writerow(headers)
+    # Add data rows
+    first_row = True
+    for passage in data:
+        book = passage.get("book", "Unknown")
+        chapter = passage.get("chapter", "1")
+        verses = passage.get("verses", [])
 
-    # Write data for all translations
-    for translation, data in all_data.items():
-        for passage in data:
-            row = [
-                translation,
-                passage.get("book", ""),
-                passage.get("chapter", ""),
-                passage.get("verse", ""),
-                passage.get("text", ""),
-            ]
-            writer.writerow(row)
+        for i, verse_text in enumerate(verses):
+            passage_num = i + 1
+
+            # First row gets metadata values, others get empty values
+            if first_row:
+                copyright_url = get_copyright_url(translation)
+                timestamp = datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%dT%H:%M:%S.%f+00:00"
+                )
+                bygod_version = "3.0.6"
+                first_row = False
+            else:
+                copyright_url = ""
+                timestamp = ""
+                bygod_version = ""
+
+            writer.writerow(
+                [
+                    book,
+                    chapter,
+                    passage_num,
+                    language_abbr,
+                    translation,
+                    copyright_url,
+                    timestamp,
+                    bygod_version,
+                ]
+            )
 
     return output.getvalue()

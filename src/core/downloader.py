@@ -69,7 +69,7 @@ class AsyncBibleDownloader:
             timeout: Request timeout in seconds
         """
         self.translation = translation.upper()
-        self.max_concurrent_requests = max_concurrent_requests
+        self._max_concurrent_requests = max_concurrent_requests
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.timeout = timeout
@@ -78,8 +78,8 @@ class AsyncBibleDownloader:
         if self.translation not in BIBLE_TRANSLATIONS:
             raise ValueError(f"Unsupported translation: {translation}")
 
-        # Create semaphore for rate limiting
-        self.semaphore = asyncio.Semaphore(max_concurrent_requests)
+        # Create semaphore for concurrency control
+        self._semaphore = asyncio.Semaphore(max_concurrent_requests)
 
         # Add small delay between requests to prevent overwhelming the server
         self.request_delay = REQUEST_DELAY
@@ -102,6 +102,11 @@ class AsyncBibleDownloader:
     def last_failed_books(self) -> List[str]:
         return self._last_failed_books
 
+    @property
+    def max_concurrent_requests(self) -> int:
+        """Get the maximum concurrent requests value."""
+        return self._max_concurrent_requests
+
     def _setup_monkey_patch(self):
         """Set up monkey patching of meaningless library's get_page function."""
         import meaningless.utilities.common
@@ -111,7 +116,7 @@ class AsyncBibleDownloader:
             if not self.session:
                 await self._create_session()
 
-            async with self.semaphore:
+            async with self._semaphore:
                 # Add small delay to prevent overwhelming the server
                 await asyncio.sleep(self.request_delay)
 
@@ -269,7 +274,7 @@ class AsyncBibleDownloader:
         if not self.session:
             await self._create_session()
 
-        async with self.semaphore:
+        async with self._semaphore:
             # Add small delay to prevent overwhelming the server
             await asyncio.sleep(self.request_delay)
 

@@ -1,146 +1,189 @@
 """
-XML formatters for ByGoD.
+XML formatter for Bible data.
 
 This module contains functions for formatting Bible data into XML format
-with metadata and structured hierarchy.
+with metadata and structured organization.
 """
 
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from ..constants.books import BOOKS
 from ..constants.translations import BIBLE_TRANSLATIONS
+from ..constants.copyright import get_copyright_url
 
 
-def format_as_xml(data: List[Dict[str, Any]], translation: str = "NIV") -> str:
+def escape_xml(text: str) -> str:
+    """Escape XML special characters."""
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
+
+
+def format_as_xml(data: List[Dict[str, Any]], translation: str) -> str:
     """
-    Format Bible data as XML with metadata.
+    Format Bible data as XML.
 
     Args:
-        data: List of Bible passage dictionaries
-        translation: Bible translation code (e.g., "NIV")
+        data: List of Bible passages
+        translation: Translation abbreviation (e.g., 'ESV', 'NIV')
 
     Returns:
         Formatted XML string
     """
     if not data:
-        return '<?xml version="1.0" encoding="UTF-8"?>\n<bible error="No data to format" />'
+        return '<?xml version="1.0" encoding="utf-8"?>\n<root>\n  <error>No data to format</error>\n</root>'
 
     # Get translation info
     translation_info = BIBLE_TRANSLATIONS.get(
         translation, {"name": translation, "language": "Unknown"}
     )
 
+    # Get language abbreviation (first 2 letters of language name)
+    language = translation_info["language"]
+    language_abbr = language[:2].upper() if len(language) >= 2 else language.upper()
+
     # Create XML structure
-    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_parts.append("<bible>")
+    xml_parts = ['<?xml version="1.0" encoding="utf-8"?>']
+    xml_parts.append("<root>")
 
-    # Add metadata
-    xml_parts.append("  <metadata>")
-    xml_parts.append(f'    <translation code="{translation}">')
-    xml_parts.append(f'      <name>{translation_info["name"]}</name>')
-    xml_parts.append(f'      <language>{translation_info["language"]}</language>')
-    xml_parts.append("    </translation>")
-    xml_parts.append(
-        f"    <generated>{datetime.now(timezone.utc).isoformat()}</generated>"
-    )
-    xml_parts.append(f"    <total_passages>{len(data)}</total_passages>")
-    xml_parts.append("    <format>xml</format>")
-    xml_parts.append("  </metadata>")
+    # Add meta section
+    xml_parts.append("  <meta>")
+    xml_parts.append(f"    <language>{language}</language>")
+    xml_parts.append(f"    <translation>{translation}</translation>")
+    copyright_url = get_copyright_url(translation)
+    xml_parts.append(f"    <copyright>{copyright_url}</copyright>")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+    xml_parts.append(f"    <timestamp>{timestamp}</timestamp>")
+    xml_parts.append("    <meaningless>3.0.6</meaningless>")
+    xml_parts.append("  </meta>")
 
-    # Group data by book
-    books = {}
+    # Add main structure: language name="abbr" -> translation name="abbr" -> book -> chapter -> passage
+    xml_parts.append(f'  <language name="{language_abbr}">')
+    xml_parts.append(f'    <translation name="{translation}">')
+
+    # Group data by book and chapter
+    books_data = {}
     for passage in data:
         book = passage.get("book", "Unknown")
-        if book not in books:
-            books[book] = []
-        books[book].append(passage)
+        chapter = passage.get("chapter", "1")
+        verses = passage.get("verses", [])
 
-    # Add books
-    xml_parts.append("  <books>")
-    for book_name, passages in books.items():
-        xml_parts.append(f'    <book name="{book_name}">')
-        for passage in passages:
-            xml_parts.append("      <passage>")
-            xml_parts.append(f'        <chapter>{passage.get("chapter", "")}</chapter>')
-            xml_parts.append(f'        <verse>{passage.get("verse", "")}</verse>')
-            xml_parts.append(f'        <text>{passage.get("text", "")}</text>')
-            xml_parts.append("      </passage>")
-        xml_parts.append("    </book>")
-    xml_parts.append("  </books>")
+        if book not in books_data:
+            books_data[book] = {}
 
-    xml_parts.append("</bible>")
+        if chapter not in books_data[book]:
+            books_data[book][chapter] = []
+
+        books_data[book][chapter].extend(verses)
+
+    # Add books with proper structure
+    for book_name, chapters in books_data.items():
+        # Create book tag with name and tag attributes
+        book_tag = re.sub(r"[^a-zA-Z0-9]", "_", book_name)
+        xml_parts.append(f'      <book name="{book_name}" tag="_{book_tag}">')
+
+        for chapter_num, verses in chapters.items():
+            xml_parts.append(f'        <chapter number="{chapter_num}">')
+            for i, verse_text in enumerate(verses):
+                passage_num = i + 1
+                escaped_text = escape_xml(verse_text)
+                xml_parts.append(
+                    f'          <passage number="{passage_num}">{escaped_text}</passage>'
+                )
+            xml_parts.append("        </chapter>")
+
+        xml_parts.append("      </book>")
+
+    xml_parts.append("    </translation>")
+    xml_parts.append("  </language>")
+    xml_parts.append("</root>")
 
     return "\n".join(xml_parts)
 
 
-def format_master_xml(all_data: Dict[str, List[Dict[str, Any]]]) -> str:
+def format_master_xml(data: List[Dict[str, Any]], translation: str) -> str:
     """
-    Format multiple translations as a single XML file.
+    Format master Bible data as XML.
 
     Args:
-        all_data: Dictionary with translation codes as keys and Bible data as values
+        data: List of Bible passages
+        translation: Translation abbreviation (e.g., 'ESV', 'NIV')
 
     Returns:
         Formatted XML string
     """
-    if not all_data:
-        return '<?xml version="1.0" encoding="UTF-8"?>\n<bible error="No data to format" />'
+    if not data:
+        return '<?xml version="1.0" encoding="utf-8"?>\n<root>\n  <error>No data to format</error>\n</root>'
+
+    # Get translation info
+    translation_info = BIBLE_TRANSLATIONS.get(
+        translation, {"name": translation, "language": "Unknown"}
+    )
+
+    # Get language abbreviation (first 2 letters of language name)
+    language = translation_info["language"]
+    language_abbr = language[:2].upper() if len(language) >= 2 else language.upper()
 
     # Create XML structure
-    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_parts.append("<bible>")
+    xml_parts = ['<?xml version="1.0" encoding="utf-8"?>']
+    xml_parts.append("<root>")
 
-    # Add metadata
-    xml_parts.append("  <metadata>")
-    xml_parts.append(
-        f"    <generated>{datetime.now(timezone.utc).isoformat()}</generated>"
-    )
-    xml_parts.append(f"    <total_translations>{len(all_data)}</total_translations>")
-    xml_parts.append("    <format>xml</format>")
-    xml_parts.append("    <translations>")
+    # Add meta section
+    xml_parts.append("  <meta>")
+    xml_parts.append(f"    <language>{language}</language>")
+    xml_parts.append(f"    <translation>{translation}</translation>")
+    copyright_url = get_copyright_url(translation)
+    xml_parts.append(f"    <copyright>{copyright_url}</copyright>")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+    xml_parts.append(f"    <timestamp>{timestamp}</timestamp>")
+    xml_parts.append("    <meaningless>3.0.6</meaningless>")
+    xml_parts.append("  </meta>")
 
-    for translation, data in all_data.items():
-        translation_info = BIBLE_TRANSLATIONS.get(
-            translation, {"name": translation, "language": "Unknown"}
-        )
-        xml_parts.append(f'      <translation code="{translation}">')
-        xml_parts.append(f'        <name>{translation_info["name"]}</name>')
-        xml_parts.append(f'        <language>{translation_info["language"]}</language>')
-        xml_parts.append(f"        <total_passages>{len(data)}</total_passages>")
-        xml_parts.append("      </translation>")
+    # Add main structure: language name="abbr" -> translation name="abbr" -> book -> chapter -> passage
+    xml_parts.append(f'  <language name="{language_abbr}">')
+    xml_parts.append(f'    <translation name="{translation}">')
 
-    xml_parts.append("    </translations>")
-    xml_parts.append("  </metadata>")
+    # Group data by book and chapter
+    books_data = {}
+    for passage in data:
+        book = passage.get("book", "Unknown")
+        chapter = passage.get("chapter", "1")
+        verses = passage.get("verses", [])
 
-    # Add translations
-    xml_parts.append("  <translations>")
-    for translation, data in all_data.items():
-        xml_parts.append(f'    <translation code="{translation}">')
+        if book not in books_data:
+            books_data[book] = {}
 
-        # Group data by book
-        books = {}
-        for passage in data:
-            book = passage.get("book", "Unknown")
-            if book not in books:
-                books[book] = []
-            books[book].append(passage)
+        if chapter not in books_data[book]:
+            books_data[book][chapter] = []
 
-        # Add books
-        for book_name, passages in books.items():
-            xml_parts.append(f'      <book name="{book_name}">')
-            for passage in passages:
-                xml_parts.append("        <passage>")
+        books_data[book][chapter].extend(verses)
+
+    # Add books with proper structure
+    for book_name, chapters in books_data.items():
+        # Create book tag with name and tag attributes
+        book_tag = re.sub(r"[^a-zA-Z0-9]", "_", book_name)
+        xml_parts.append(f'      <book name="{book_name}" tag="_{book_tag}">')
+
+        for chapter_num, verses in chapters.items():
+            xml_parts.append(f'        <chapter number="{chapter_num}">')
+            for i, verse_text in enumerate(verses):
+                passage_num = i + 1
+                escaped_text = escape_xml(verse_text)
                 xml_parts.append(
-                    f'          <chapter>{passage.get("chapter", "")}</chapter>'
+                    f'          <passage number="{passage_num}">{escaped_text}</passage>'
                 )
-                xml_parts.append(f'          <verse>{passage.get("verse", "")}</verse>')
-                xml_parts.append(f'          <text>{passage.get("text", "")}</text>')
-                xml_parts.append("        </passage>")
-            xml_parts.append("      </book>")
+            xml_parts.append("        </chapter>")
 
-        xml_parts.append("    </translation>")
-    xml_parts.append("  </translations>")
+        xml_parts.append("      </book>")
 
-    xml_parts.append("</bible>")
+    xml_parts.append("    </translation>")
+    xml_parts.append("  </language>")
+    xml_parts.append("</root>")
 
     return "\n".join(xml_parts)

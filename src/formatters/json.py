@@ -9,16 +9,18 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from ..constants.books import BOOKS
 from ..constants.translations import BIBLE_TRANSLATIONS
+from ..constants.copyright import get_copyright_url
 
 
-def format_as_json(data: List[Dict[str, Any]], translation: str = "NIV") -> str:
+def format_as_json(data: List[Dict[str, Any]], translation: str) -> str:
     """
-    Format Bible data as JSON with metadata.
+    Format Bible data as JSON.
 
     Args:
-        data: List of Bible passage dictionaries
-        translation: Bible translation code (e.g., "NIV")
+        data: List of Bible passages
+        translation: Translation abbreviation (e.g., 'ESV', 'NIV')
 
     Returns:
         Formatted JSON string
@@ -31,28 +33,39 @@ def format_as_json(data: List[Dict[str, Any]], translation: str = "NIV") -> str:
         translation, {"name": translation, "language": "Unknown"}
     )
 
-    # Create metadata
-    metadata = {
-        "translation": {
-            "code": translation,
-            "name": translation_info["name"],
-            "language": translation_info["language"],
-        },
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "total_passages": len(data),
-        "format": "json",
-    }
+    # Get language abbreviation (first 2 letters of language name)
+    language = translation_info["language"]
+    language_abbr = language[:2].upper() if len(language) >= 2 else language.upper()
 
-    # Group data by book
-    books = {}
+    # Create the main structure: language_abbr -> translation_abbr -> book -> chapter -> verse
+    result = {language_abbr: {translation: {}}}
+
+    # Group data by book and chapter
     for passage in data:
         book = passage.get("book", "Unknown")
-        if book not in books:
-            books[book] = []
-        books[book].append(passage)
+        chapter = passage.get("chapter", "1")
+        verses = passage.get("verses", [])
 
-    # Create final structure
-    result = {"metadata": metadata, "books": books}
+        if book not in result[language_abbr][translation]:
+            result[language_abbr][translation][book] = {}
+
+        # Add chapter with verses
+        result[language_abbr][translation][book][chapter] = {}
+        for i, verse_text in enumerate(verses):
+            verse_num = i + 1
+            result[language_abbr][translation][book][chapter][
+                str(verse_num)
+            ] = verse_text
+
+    # Add metadata section
+    copyright_url = get_copyright_url(translation)
+    result["meta"] = {
+        "Copyright": copyright_url,
+        "Language": language,
+        "ByGod": "3.0.6",
+        "Timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00"),
+        "Translation": translation,
+    }
 
     return json.dumps(result, indent=2, ensure_ascii=False)
 
@@ -70,37 +83,48 @@ def format_master_json(all_data: Dict[str, List[Dict[str, Any]]]) -> str:
     if not all_data:
         return json.dumps({"error": "No data to format"}, indent=2)
 
-    # Create metadata
-    metadata = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "total_translations": len(all_data),
-        "translations": {},
-    }
-
-    # Add translation info to metadata
+    # Group translations by language
+    languages = {}
     for translation, data in all_data.items():
         translation_info = BIBLE_TRANSLATIONS.get(
             translation, {"name": translation, "language": "Unknown"}
         )
-        metadata["translations"][translation] = {
-            "name": translation_info["name"],
-            "language": translation_info["language"],
-            "total_passages": len(data),
-        }
+        language = translation_info["language"]
+        language_abbr = language[:2].upper() if len(language) >= 2 else language.upper()
 
-    # Create final structure
-    result = {"metadata": metadata, "translations": {}}
+        if language_abbr not in languages:
+            languages[language_abbr] = {}
 
-    # Add each translation's data
-    for translation, data in all_data.items():
-        # Group data by book
-        books = {}
+        # Add translation data
+        languages[language_abbr][translation] = {}
+
+        # Group data by book and chapter
         for passage in data:
             book = passage.get("book", "Unknown")
-            if book not in books:
-                books[book] = []
-            books[book].append(passage)
+            chapter = passage.get("chapter", "1")
+            verses = passage.get("verses", [])
 
-        result["translations"][translation] = {"books": books}
+            if book not in languages[language_abbr][translation]:
+                languages[language_abbr][translation][book] = {}
+
+            # Add chapter with verses
+            languages[language_abbr][translation][book][chapter] = {}
+            for i, verse_text in enumerate(verses):
+                verse_num = i + 1
+                languages[language_abbr][translation][book][chapter][
+                    str(verse_num)
+                ] = verse_text
+
+    # Create final structure
+    result = languages.copy()
+
+    # Add metadata section
+    result["meta"] = {
+        "Copyright": "https://www.biblegateway.com/versions/",
+        "Language": "Multiple",
+        "ByGod": "3.0.6",
+        "Timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00"),
+        "Translation": "Multiple",
+    }
 
     return json.dumps(result, indent=2, ensure_ascii=False)

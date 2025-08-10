@@ -7,11 +7,9 @@ combined output files containing all translations.
 
 import json
 import logging
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List
 
-from ..constants.translations import BIBLE_TRANSLATIONS
 from ..core.downloader import download_bible_async
 from ..formatters import (
     format_master_csv,
@@ -21,7 +19,7 @@ from ..formatters import (
 )
 
 
-def combine_existing_translations(
+def translations_combine_existing_processor(
     translations: List[str],
     output_dir: str,
     formats: List[str],
@@ -127,11 +125,11 @@ def combine_existing_translations(
     return success
 
 
-async def process_master_file(
+async def translations_combine_processor(
     translations: List[str],
     output_dir: str,
     formats: List[str],
-    rate_limit: int,
+    max_concurrent_requests: int,
     retries: int,
     retry_delay: int,
     timeout: int,
@@ -145,7 +143,7 @@ async def process_master_file(
         translations: List of translation codes
         output_dir: Output directory path
         formats: List of output formats
-        rate_limit: Maximum concurrent requests
+        max_concurrent_requests: Maximum concurrent requests
         retries: Maximum retry attempts
         retry_delay: Delay between retries
         timeout: Request timeout
@@ -166,7 +164,7 @@ async def process_master_file(
 
             data = await download_bible_async(
                 translation=translation,
-                max_concurrent_requests=rate_limit,
+                max_concurrent_requests=max_concurrent_requests,
                 max_retries=retries,
                 retry_delay=retry_delay,
                 timeout=timeout,
