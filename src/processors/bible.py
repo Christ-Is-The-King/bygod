@@ -91,7 +91,7 @@ async def bible_processor(
                 return
             data.extend(downloaded)
 
-        # download_time = time.time() - start_time  # Unused variable
+        download_time = time.time() - start_time
 
         # Validate that all books are present in data; if any missing, abort
         present_books = {p.get("book") for p in data if p.get("book")}
