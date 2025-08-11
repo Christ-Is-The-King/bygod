@@ -11,6 +11,7 @@ from typing import Any, Dict, List
 
 from ..constants.copyright import get_copyright_url
 from ..constants.translations import BIBLE_TRANSLATIONS
+from ..constants.version import VERSION
 
 
 def format_as_json(data: List[Dict[str, Any]], translation: str) -> str:
@@ -61,7 +62,7 @@ def format_as_json(data: List[Dict[str, Any]], translation: str) -> str:
     result["meta"] = {
         "Copyright": copyright_url,
         "Language": language,
-        "ByGod": "3.1.0",
+        "ByGod": VERSION,
         "Timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00"),
         "Translation": translation,
     }
@@ -121,7 +122,7 @@ def format_master_json(all_data: Dict[str, List[Dict[str, Any]]]) -> str:
     result["meta"] = {
         "Copyright": "https://www.biblegateway.com/versions/",
         "Language": "Multiple",
-        "ByGod": "3.1.0",
+        "ByGod": VERSION,
         "Timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00"),
         "Translation": "Multiple",
     }

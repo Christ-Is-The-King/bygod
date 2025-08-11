@@ -304,7 +304,7 @@ All output formats (JSON, YAML, XML, CSV) maintain consistent structure and meta
   "meta": {
     "Copyright": "https://www.biblegateway.com/versions/esv-bible/#copy",
     "Language": "English",
-    "ByGod": "3.0.6",
+    "ByGod": "3.2.0",
     "Timestamp": "2025-01-XXTXX:XX:XX.XXXXXX+00:00",
     "Translation": "ESV"
   }

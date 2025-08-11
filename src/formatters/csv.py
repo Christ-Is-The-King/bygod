@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 
 from ..constants.copyright import get_copyright_url
 from ..constants.translations import BIBLE_TRANSLATIONS
+from ..constants.version import VERSION
 
 
 def format_as_csv(data: List[Dict[str, Any]], translation: str) -> str:
@@ -71,7 +72,7 @@ def format_as_csv(data: List[Dict[str, Any]], translation: str) -> str:
                 timestamp = datetime.now(timezone.utc).strftime(
                     "%Y-%m-%dT%H:%M:%S.%f+00:00"
                 )
-                bygod_version = "3.1.0"
+                bygod_version = VERSION
                 first_row = False
             else:
                 copyright_url = ""
@@ -151,7 +152,7 @@ def format_master_csv(data: List[Dict[str, Any]], translation: str) -> str:
                 timestamp = datetime.now(timezone.utc).strftime(
                     "%Y-%m-%dT%H:%M:%S.%f+00:00"
                 )
-                bygod_version = "3.1.0"
+                bygod_version = VERSION
                 first_row = False
             else:
                 copyright_url = ""

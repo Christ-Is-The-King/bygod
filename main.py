@@ -6,7 +6,7 @@ A comprehensive, truly asynchronous tool for downloading Bible translations
 from BibleGateway.com in multiple formats (JSON, CSV, YAML, XML) with
 genuine parallel downloads, retry mechanisms, and flexible output options.
 
-Version: 3.1.0 - CLI Improvements Edition
+Version: {VERSION} - CLI Improvements Edition
 """
 
 import asyncio
@@ -16,6 +16,7 @@ from pathlib import Path
 
 from src.cli.parser import parse_args
 from src.constants.books import BOOKS
+from src.constants.version import VERSION
 from src.processors.bible import bible_processor
 from src.processors.books import books_processor
 from src.processors.translations import translations_combine_processor
