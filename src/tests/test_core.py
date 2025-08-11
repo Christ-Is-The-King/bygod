@@ -4,7 +4,6 @@ Tests for the core downloader functionality.
 This module contains tests for the AsyncBibleDownloader class and related functions.
 """
 
-import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -171,7 +170,7 @@ class TestDownloadBibleAsync:
             mock_downloader.download_full_bible.return_value = [
                 {"book": "Genesis", "chapter": "1", "verses": ["In the beginning..."]}
             ]
-            
+
             # Mock the last_failed_books property to return empty list (no failures)
             mock_downloader.last_failed_books = []
 

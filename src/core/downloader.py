@@ -11,7 +11,6 @@ import os
 import re
 import shutil
 import tempfile
-import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
@@ -33,7 +32,7 @@ from ..constants.cli import (
     REQUEST_DELAY,
 )
 from ..constants.translations import BIBLE_TRANSLATIONS
-from ..utils.formatting import format_duration, format_number_with_commas
+from ..utils.formatting import format_number_with_commas
 
 # Mapping of our canonical book names to BibleGateway/meaningless expected names
 BOOK_NAME_GATEWAY_ALIASES: Dict[str, str] = {
@@ -373,9 +372,6 @@ class AsyncBibleDownloader:
         """
         # Use known chapter counts first (fastest and most reliable)
         if book in CHAPTER_COUNTS:
-            self.logger.debug(
-                f"Using known chapter count for {book}: {CHAPTER_COUNTS[book]}"
-            )
             return CHAPTER_COUNTS[book]
 
         # Fallback: try to get chapter count from the first chapter page (only if not in known list)
@@ -465,11 +461,8 @@ class AsyncBibleDownloader:
         """
         temp_dir = None
         try:
-            # Capture start time right before the actual download begins
-            chapter_start_time = time.time()
-
             # Log chapter start
-            self.logger.info(f"📖 Starting {book} {chapter} ({self.translation})")
+            self.logger.debug(f"📖 Starting {book} {chapter} ({self.translation})")
 
             # Use JSONDownloader directly - it handles all parsing through meaningless library
             downloader = JSONDownloader(
@@ -574,8 +567,6 @@ class AsyncBibleDownloader:
                 )
                 return None
 
-            end_time = time.time()
-            duration = end_time - chapter_start_time
             self.logger.info(
                 f"✅ Downloaded {book} {chapter} ({self.translation}): "
                 f"{format_number_with_commas(len(verses))} verses"
@@ -608,8 +599,8 @@ class AsyncBibleDownloader:
         Returns:
             List of chapter dictionaries
         """
-        book_start_time = time.time()
-        self.logger.info(f"📚 Starting download of {book} ({self.translation})")
+
+        self.logger.debug(f"📚 Starting download of {book} ({self.translation})")
 
         # Discover chapter count (now instant for known books)
         chapter_count = await self._discover_chapter_count(book)
@@ -639,10 +630,6 @@ class AsyncBibleDownloader:
             elif result:
                 chapters.append(result)
                 successful_chapters += 1
-                self.logger.debug(
-                    f"✅ Downloaded {book} {chapter_num} ({self.translation}): "
-                    f"{len(result['verses'])} verses"
-                )
             else:
                 self.logger.warning(
                     f"❌ Failed to download {book} {chapter_num} ({self.translation})"
@@ -650,12 +637,10 @@ class AsyncBibleDownloader:
                 failed_chapters += 1
 
         total_verses = sum(len(chapter["verses"]) for chapter in chapters)
-        book_duration = time.time() - book_start_time
         self.logger.info(
             f"📊 Completed {book} ({self.translation}): "
             f"{successful_chapters}/{chapter_count} chapters, "
-            f"{format_number_with_commas(total_verses)} total verses in "
-            f"{format_duration(book_duration)}"
+            f"{format_number_with_commas(total_verses)} total verses"
         )
 
         if failed_chapters > 0:

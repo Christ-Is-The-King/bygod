@@ -9,9 +9,8 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from ..constants.books import BOOKS
-from ..constants.translations import BIBLE_TRANSLATIONS
 from ..constants.copyright import get_copyright_url
+from ..constants.translations import BIBLE_TRANSLATIONS
 
 
 def escape_xml(text: str) -> str:

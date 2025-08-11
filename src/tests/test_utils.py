@@ -7,7 +7,6 @@ This module contains tests for formatting and logging utilities.
 import logging
 import os
 import tempfile
-from unittest.mock import patch
 
 import pytest
 

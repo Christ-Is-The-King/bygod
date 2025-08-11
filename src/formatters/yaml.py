@@ -5,13 +5,13 @@ This module contains functions for formatting Bible data into YAML format
 with metadata and structured organization.
 """
 
-import yaml
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from ..constants.books import BOOKS
-from ..constants.translations import BIBLE_TRANSLATIONS
+import yaml
+
 from ..constants.copyright import get_copyright_url
+from ..constants.translations import BIBLE_TRANSLATIONS
 
 
 def format_as_yaml(data: List[Dict[str, Any]], translation: str) -> str:

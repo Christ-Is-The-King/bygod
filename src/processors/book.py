@@ -5,7 +5,6 @@ This module contains functions for processing individual book downloads.
 """
 
 import logging
-import time
 from pathlib import Path
 from typing import List, Tuple
 
@@ -40,7 +39,7 @@ async def book_processor(
     """
     try:
         # Download the book
-        start_time = time.time()
+
         data = await download_bible_async(
             translation=translation,
             books=[book],
@@ -83,7 +82,7 @@ async def book_processor(
                     f.write(formatted_data)
 
                 logger.debug(
-                    f"Saved {book} ({translation}) in {fmt} format: {output_file}"
+                    f"💾 Saved {book} ({translation}) in {fmt} format: {output_file}"
                 )
                 saved_any = True
 

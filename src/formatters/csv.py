@@ -10,9 +10,8 @@ import io
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from ..constants.books import BOOKS
-from ..constants.translations import BIBLE_TRANSLATIONS
 from ..constants.copyright import get_copyright_url
+from ..constants.translations import BIBLE_TRANSLATIONS
 
 
 def format_as_csv(data: List[Dict[str, Any]], translation: str) -> str:

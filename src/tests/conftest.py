@@ -5,14 +5,12 @@ This module contains pytest configuration and shared fixtures for all tests.
 """
 
 import asyncio
-import os
 import tempfile
 from unittest.mock import AsyncMock
 
 import pytest
 
 from ..constants.books import BOOKS, NEW_TESTAMENT_BOOKS, OLD_TESTAMENT_BOOKS
-from ..constants.chapters import CHAPTER_COUNTS
 from ..constants.translations import BIBLE_TRANSLATIONS
 
 

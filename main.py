@@ -1,45 +1,44 @@
 #!/usr/bin/env python3
 """
-ByGoD
+ByGoD - The Bible, By God - Bible Gateway Downloader
 
-A comprehensive, truly asynchronous tool for downloading Bible translations from
-BibleGateway.com in multiple formats (JSON, CSV, YAML, XML) with genuine parallel
-downloads, retry mechanisms, and flexible output options.
+A comprehensive, truly asynchronous tool for downloading Bible translations
+from BibleGateway.com in multiple formats (JSON, CSV, YAML, XML) with
+genuine parallel downloads, retry mechanisms, and flexible output options.
 
-This module provides:
-- True async HTTP requests with aiohttp for genuine parallelism
-- Direct HTML parsing from BibleGateway (bypassing synchronous libraries)
-- Support for multiple Bible translations simultaneously
-- Output in various formats (JSON, CSV, YAML, XML)
-- Intelligent rate limiting and retry mechanisms
-- Organized output in structured directories
-- Comprehensive logging and progress tracking
-
-Author: ByGoD Team
-License: MIT
 Version: 3.1.0 - CLI Improvements Edition
 """
 
 import asyncio
-import logging
-import os
 import sys
 import time
 from pathlib import Path
-from typing import List
 
-# Import modular components
 from src.cli.parser import parse_args
 from src.constants.books import BOOKS
-from src.processors.books import books_processor
 from src.processors.bible import bible_processor
+from src.processors.books import books_processor
 from src.processors.translations import translations_combine_processor
 from src.utils.formatting import format_duration
 from src.utils.logging import setup_logging
 
 
 async def main_async():
-    """Orchestrate the Bible download process asynchronously."""
+    """
+    Orchestrate the Bible download process asynchronously.
+
+    This function handles three operation modes:
+    - books: Download individual book files (all books by default, or use -b
+      for specific books)
+    - bible: Download entire Bible directly to a single file (most efficient
+      for full Bible only)
+    - bible-books: Download both individual books AND assemble the full Bible
+      (most comprehensive)
+
+    The function intelligently processes translations based on the selected
+    mode, with optimized performance for Bible assembly when reusing existing
+    book files.
+    """
     # Parse command-line arguments
     args = parse_args()
 
@@ -54,6 +53,7 @@ async def main_async():
 
     # Log startup information
     logger.info("🚀 ByGoD")
+    logger.info(f"📋 Mode: {args.bygod}")
     logger.info(f"📚 Translations: {', '.join(args.translations)}")
     logger.info(f"📖 Books: {args.books if args.books else 'All books'}")
     logger.info(f"📄 Formats: {', '.join(args.formats)}")
@@ -95,20 +95,20 @@ async def main_async():
         )
         return 0
 
-    # Process each translation
+    # Process each translation based on operation mode
     start_time = time.time()
     failed_translations = []
+
     for translation in args.translations:
         try:
             logger.info(f"📖 Processing {translation}")
-            translation_dir = output_dir / translation
-            books_dir = translation_dir / "books"
 
-            if books_to_download:
-                # Download only selected books
+            # Mode: books - Download individual books only
+            if args.bygod == "books":
+                books_to_process = books_to_download if books_to_download else BOOKS
                 result = await books_processor(
                     translation=translation,
-                    books=books_to_download,
+                    books=books_to_process,
                     output_dir=str(output_dir),
                     formats=args.formats,
                     max_concurrent_requests=args.concurrency,
@@ -119,39 +119,13 @@ async def main_async():
                 )
                 if result and isinstance(result, dict):
                     logger.info(
-                        f"📦 Summary for {translation}: {result.get('success_count', 0)} books saved, {result.get('failed_count', 0)} failed"
+                        f"📦 Summary for {translation}: "
+                        f"{result.get('success_count', 0)} books saved, "
+                        f"{result.get('failed_count', 0)} failed"
                     )
-                # Intelligent assemble: create full Bible only if all books are present on disk
-                all_exist = all((books_dir / f"{book}.json").exists() for book in BOOKS)
-                if all_exist:
-                    await bible_processor(
-                        translation=translation,
-                        output_dir=str(output_dir),
-                        formats=args.formats,
-                        max_concurrent_requests=args.concurrency,
-                        retries=args.retries,
-                        retry_delay=args.delay,
-                        timeout=args.timeout,
-                        logger=logger,
-                    )
-            else:
-                # No specific books requested: download all books, then assemble full Bible
-                result = await books_processor(
-                    translation=translation,
-                    books=BOOKS,
-                    output_dir=str(output_dir),
-                    formats=args.formats,
-                    max_concurrent_requests=args.concurrency,
-                    retries=args.retries,
-                    retry_delay=args.delay,
-                    timeout=args.timeout,
-                    logger=logger,
-                )
-                if result and isinstance(result, dict):
-                    logger.info(
-                        f"📦 Summary for {translation}: {result.get('success_count', 0)} books saved, {result.get('failed_count', 0)} failed"
-                    )
-                # After downloading all books, assemble the full Bible from existing files
+
+            # Mode: bible - Download entire Bible to single file only
+            elif args.bygod == "bible":
                 await bible_processor(
                     translation=translation,
                     output_dir=str(output_dir),
@@ -162,16 +136,55 @@ async def main_async():
                     timeout=args.timeout,
                     logger=logger,
                 )
+
+            # Mode: bible-books - Download both individual books AND entire
+            # Bible
+            elif args.bygod == "bible-books":
+                # First download individual books
+                books_to_process = books_to_download if books_to_download else BOOKS
+                result = await books_processor(
+                    translation=translation,
+                    books=books_to_process,
+                    output_dir=str(output_dir),
+                    formats=args.formats,
+                    max_concurrent_requests=args.concurrency,
+                    retries=args.retries,
+                    retry_delay=args.delay,
+                    timeout=args.timeout,
+                    logger=logger,
+                )
+                if result and isinstance(result, dict):
+                    logger.info(
+                        f"📦 Summary for {translation}: "
+                        f"{result.get('success_count', 0)} books saved, "
+                        f"{result.get('failed_count', 0)} failed"
+                    )
+
+                # Then assemble full Bible from the downloaded books
+                await bible_processor(
+                    translation=translation,
+                    output_dir=str(output_dir),
+                    formats=args.formats,
+                    max_concurrent_requests=args.concurrency,
+                    retries=args.retries,
+                    retry_delay=args.delay,
+                    timeout=args.timeout,
+                    logger=logger,
+                )
+
         except Exception as e:
             logger.error(f"❌ Error processing {translation}: {e}")
             failed_translations.append(translation)
+
     # Log completion summary
     total_time = time.time() - start_time
     successful_translations = [
         t for t in args.translations if t not in failed_translations
     ]
     logger.info(
-        f"⏱️ Total Time: {format_duration(total_time)}, Successful translations: {len(successful_translations)}, Failed translations: {len(failed_translations)}"
+        f"⏱️ Total Time: {format_duration(total_time)}, "
+        f"Successful translations: {len(successful_translations)}, "
+        f"Failed translations: {len(failed_translations)}"
     )
     return 0 if not failed_translations else 1
 

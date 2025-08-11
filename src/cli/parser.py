@@ -80,24 +80,42 @@ def parse_args():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Examples:
-  # Download NIV Bible in JSON format
-  python main.py -t NIV -f json
+  # Download all books for NIV Bible
+  python main.py books -t NIV -f json
+
+  # Download specific books for NIV Bible
+  python main.py books -t NIV -b "Genesis,Psalms,Matthew" -f json
+
+  # Download entire NIV Bible to a single file
+  python main.py bible -t NIV -f json
+
+  # Download all books AND entire Bible for NIV
+  python main.py bible-books -t NIV -f json
 
   # Download multiple translations in all formats
-  python main.py -t NIV,KJV,ESV -f json,csv,xml,yaml
-
-  # Download specific books only
-  python main.py -t NIV -b "Genesis,Psalms,Matthew"
+  python main.py books -t NIV,KJV,ESV -f json,csv,xml,yaml
 
   # Download with custom output directory and verbose logging
-  python main.py -t NIV -o ./my_bibles -vv
+  python main.py books -t NIV -o ./my_bibles -vv
 
   # Download with combined output file
-  python main.py -t NIV,KJV --combined
+  python main.py books -t NIV,KJV --combined
 
   # Download with custom concurrency and retry settings
-  python main.py -t NIV -c 3 --retries 5 --timeout 60
+  python main.py books -t NIV -c 3 --retries 5 --timeout 60
         """,
+    )
+
+    # ByGoD operation mode (required positional argument)
+    parser.add_argument(
+        "bygod",
+        choices=["books", "bible", "bible-books"],
+        help=(
+            "Operation mode:\n"
+            "  books       - Download individual books (all books by default, or use -b for specific books)\n"
+            "  bible       - Download entire Bible to a single file\n"
+            "  bible-books - Download both individual books AND entire Bible to a single file"
+        ),
     )
 
     # Translation selection

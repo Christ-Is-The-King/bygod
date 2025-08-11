@@ -4,8 +4,6 @@ Tests for constants.
 This module contains tests for Bible translations and books constants.
 """
 
-import pytest
-
 from ..constants.books import (
     BOOKS,
     NEW_TESTAMENT_BOOKS,

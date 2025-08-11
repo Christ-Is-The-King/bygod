@@ -7,6 +7,7 @@ combined output files containing all translations.
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import List
 
@@ -223,7 +224,3 @@ async def translations_combine_processor(
         )
     else:
         logger.error("❌ Some combined files failed to create")
-
-
-# Import time module for timing
-import time
